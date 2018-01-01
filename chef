@@ -33,7 +33,7 @@ options_menu() {
 			--backtitle "Broth Linux - Kitchen Management" \
 			--title " [ Kitchen Options and Settings ] " \
 			--checklist "Toggle head chef features and debugging:" 12 55 3 \
-			DEBUG "Enable autodepends (Dev Tools)" "$DEBUG_MODE" 2> "$TMP"
+			DEBUG "Enable soupcheck (Dev Tools)" "$DEBUG_MODE" 2> "$TMP"
 		STATUS=$?
 		CHOICES=$(cat "$TMP")
 		rm -f "$TMP"
@@ -68,7 +68,7 @@ main_menu() {
 		   5 \"Kitchen Options (Settings)\""
 
 	if [ "$DEBUG_MODE" = "on" ]; then
-		ITEMS="$ITEMS 6 \"Autodepends (Scan ELF Dependencies)\""
+		ITEMS="$ITEMS 6 \"Soupcheck (Scan ELF Dependencies)\""
 		ITEMS="$ITEMS 7 \"Prepare a recipe (New Dish)\""
 		ITEMS="$ITEMS 8 \"Edit a recipe (Modify .rsc))\""
 		ITEMS="$ITEMS 9 \"Exit the kitchen\""
@@ -426,12 +426,12 @@ autodepends_menu() {
 	echo " Scanning dependencies for: $PKG "
 	echo "====================================="
 	echo ""
-	if command -v autodepends >/dev/null 2>&1; then
-		autodepends "$PKG"
-	elif [ -x "/home/spgit/autodepends" ]; then
-		"/home/spgit/autodepends" "$PKG"
+	if command -v soupcheck >/dev/null 2>&1; then
+		soupcheck "$PKG"
+	elif [ -x "/usr/bin/soupcheck" ]; then
+		"/usr/bin/soupcheck" "$PKG"
 	else
-		echo "[-] Error: autodepends script not found."
+		echo "[-] Error: soupcheck script not found."
 	fi
 	echo ""
 	printf "Press Enter to return to the kitchen..."
