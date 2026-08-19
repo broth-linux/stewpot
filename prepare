@@ -1,0 +1,46 @@
+#!/bin/sh
+# prepare: Recipe generator for stew-pot
+
+set -eu
+
+RECIPES_DIR="/usr/bin/recipes"
+mkdir -p "$RECIPES_DIR"
+
+if [ -z "${1:-}" ]; then
+    echo "Usage: prepare <name> [version] [url] [depends]"
+    echo "Example: prepare libpng 1.6.43 https://example.com/libpng-1.6.43.tar.xz zlib"
+    exit 1
+fi
+
+PKG_NAME="$1"
+PKG_VER="${2:-1.0.0}"
+PKG_URL="${3:-https://example.com/source/${PKG_NAME}-${PKG_VER}.tar.gz}"
+PKG_DEPS="${4:-}"
+
+TARGET_FILE="${RECIPES_DIR}/${PKG_NAME}.rsc"
+
+if [ -f "$TARGET_FILE" ]; then
+    echo "[-] ERROR: Recipe '${TARGET_FILE}' already exists!"
+    exit 1
+fi
+
+cat <<EOF > "$TARGET_FILE"
+# Recipe for ${PKG_NAME}
+NAME="${PKG_NAME}"
+VERSION="${PKG_VER}"
+DEPENDS="${PKG_DEPS}"
+URL="${PKG_URL}"
+
+build() {
+    ./configure \\
+        --prefix=/usr \\
+        --sysconfdir=/etc \\
+        --mandir=/usr/share/man \\
+        --localstatedir=/var
+
+    make -j\$(nproc 2>/dev/null || echo 1)
+    make DESTDIR="\$BUILD_ROOT" install
+}
+EOF
+
+echo "[+] Recipe prepared: $TARGET_FILE"
