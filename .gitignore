@@ -1,0 +1,12 @@
+# Build artifiacts & temp files
+*.tar.gz
+*.tar.xz
+*.o
+*.out
+/tmp/
+/build/
+
+# Keys & sensitive files
+*.key
+*.pem
+id_*
