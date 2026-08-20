@@ -1,0 +1,7 @@
+#!/bin/sh
+# dishwash: Scour the build pots clean
+
+echo "Scrubbing pots and pans in /tmp..."
+rm -rf /tmp/stew-pot-* /tmp/*.tar.* 2>/dev/null || true
+
+echo "Pans are spotless. Ready for the next shift."

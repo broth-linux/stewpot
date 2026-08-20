@@ -1,0 +1,41 @@
+#!/bin/sh
+# spill: Scrape an installed package off the pan
+
+set -e
+
+PKG="$1"
+DB_DIR="/var/db/stew/installed"
+MANIFEST="$DB_DIR/$PKG/manifest"
+
+if [ -z "$PKG" ]; then
+	echo "Usage: spill <package-name>"
+	exit 1
+fi
+
+if [ ! -f "$MANIFEST" ]; then
+	echo "[!] Cannot spill $PKG: Manifest not found in $DB_DIR/$PKG."
+	exit 1
+fi
+
+printf "Are you sure you want to scrape %s off the pan [y/N] " "$PKG"
+read -r ans
+case "$ans" in 
+	[yY][eE][sS]|[yY]) ;;
+	*) echo "Leaving $PKG on the burner."; exit 0 ;;
+esac
+
+echo "Spillign $PKG..."
+
+# Delete installed files in reverse order (files first, then empty dirs)
+while IFS= read -r file; do
+	if [ -f "/$file" ] || [ -L "/$file" ]; then
+		rm -f "/$file"
+	elif [ -d "/$file" ]; then
+		rmdir "/$file" 2>/dev/null || true
+	fi
+done < "$MANIFEST"
+
+# Clean up package database entry
+rm -rf "$DB_DIR/$PKG"
+
+echo "[+] Spilled $PKG cleanly."

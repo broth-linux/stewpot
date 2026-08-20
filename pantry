@@ -1,0 +1,19 @@
+#!/bin/sh
+# pantry: Check cached ingredients
+
+DIR="${1:-/var/cache/stew/sources}"
+
+echo "=== Broth Pantry ==="
+if [ ! -d "$DIR" ] || [ -z "$(ls -A "$DIR" 2>/dev/null)" ]; then
+	echo "Pantry is empty. we need a grocery run."
+	exit 0
+fi
+
+for item in "$DIR"/*; do
+	[ -f "$item" ] || continue
+	name="$(basename "$item")"
+	size="$(du -h "$item" | cut -f1)"
+	echo "[$size] $name [RAW]"
+done
+
+echo "========================"
