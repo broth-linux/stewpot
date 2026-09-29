@@ -1,8 +1,8 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for xorgproto
+NAME="xorgproto"
+VERSION="2024.1"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://www.x.org/pub/individual/proto/xorgproto-2024.1.tar.xz"
 
 build() {
     ./configure \
@@ -14,3 +14,4 @@ build() {
     make -j$(nproc 2>/dev/null || echo 1)
     make DESTDIR="$BUILD_ROOT" install
 }
+

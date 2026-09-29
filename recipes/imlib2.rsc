@@ -1,8 +1,9 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for imlib2
+NAME="imlib2"
+VERSION="1.12.7"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://downloads.sourceforge.net/enlightenment/imlib2-1.12.7.tar.xz"
+UPSTREAM_SOURCE=""
 
 build() {
     ./configure \
@@ -14,3 +15,4 @@ build() {
     make -j$(nproc 2>/dev/null || echo 1)
     make DESTDIR="$BUILD_ROOT" install
 }
+

@@ -1,8 +1,8 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for xkbcomp
+NAME="xkbcomp"
+VERSION="1.5.0"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://xorg.freedesktop.org/archive/individual/app/xkbcomp-1.5.0.tar.xz"
 
 build() {
     ./configure \
@@ -14,3 +14,4 @@ build() {
     make -j$(nproc 2>/dev/null || echo 1)
     make DESTDIR="$BUILD_ROOT" install
 }
+

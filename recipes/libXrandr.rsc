@@ -1,8 +1,9 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for libXrandr
+NAME="libXrandr"
+VERSION="1.5.5"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://xorg.freedesktop.org/archive/individual/lib/libXrandr-1.5.5.tar.xz"
+UPSTREAM_SOURCE=""
 
 build() {
     ./configure \
@@ -14,3 +15,4 @@ build() {
     make -j$(nproc 2>/dev/null || echo 1)
     make DESTDIR="$BUILD_ROOT" install
 }
+

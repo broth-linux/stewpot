@@ -1,8 +1,8 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for setuptools
+NAME="setuptools"
+VERSION="75.8.0"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://github.com/pypa/setuptools/archive/refs/tags/v75.8.0.tar.gz"
 
 build() {
     ./configure \

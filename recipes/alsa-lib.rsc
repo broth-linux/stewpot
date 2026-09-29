@@ -1,8 +1,9 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for alsa-lib
+NAME="alsa-lib"
+VERSION="1.2.5.1"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://ww.alsa-project.org/files/pub/lib/alsa-lib-1.2.5.1.tar.bz2"
+UPSTREAM_SOURCE=""
 
 build() {
     ./configure \
@@ -14,3 +15,4 @@ build() {
     make -j$(nproc 2>/dev/null || echo 1)
     make DESTDIR="$BUILD_ROOT" install
 }
+

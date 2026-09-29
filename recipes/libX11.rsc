@@ -1,16 +1,19 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for libX11
+NAME="libX11"
+VERSION="1.8.10"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://xorg.freedesktop.org/archive/individual/lib/libX11-1.8.10.tar.xz"
 
 build() {
     ./configure \
         --prefix=/usr \
         --sysconfdir=/etc \
         --mandir=/usr/share/man \
+	--disable-specs \
+	--disable-static \
         --localstatedir=/var
 
     make -j$(nproc 2>/dev/null || echo 1)
     make DESTDIR="$BUILD_ROOT" install
 }
+

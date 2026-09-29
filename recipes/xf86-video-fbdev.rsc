@@ -1,8 +1,8 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for xf86-video-fbdev
+NAME="xf86-video-fbdev"
+VERSION="0.5.0"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://www.x.org/pub/individual/driver/xf86-video-fbdev-0.5.0.tar.bz2"
 
 build() {
     ./configure \
@@ -14,3 +14,4 @@ build() {
     make -j$(nproc 2>/dev/null || echo 1)
     make DESTDIR="$BUILD_ROOT" install
 }
+

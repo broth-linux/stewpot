@@ -1,8 +1,9 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for musl-fts
+NAME="musl-fts"
+VERSION="1.2.7"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://github.com/void-linux/musl-fts/archive/refs/tags/v1.2.7.tar.gz"
+UPSTREAM_SOURCE=""
 
 build() {
     ./configure \
@@ -14,3 +15,4 @@ build() {
     make -j$(nproc 2>/dev/null || echo 1)
     make DESTDIR="$BUILD_ROOT" install
 }
+

@@ -1,8 +1,8 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for libXi
+NAME="libXi"
+VERSION="1.8"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://xorg.freedesktop.org/releases/individual/lib/libXi-1.8.tar.gz"
 
 build() {
     ./configure \
@@ -14,3 +14,4 @@ build() {
     make -j$(nproc 2>/dev/null || echo 1)
     make DESTDIR="$BUILD_ROOT" install
 }
+

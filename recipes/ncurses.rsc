@@ -25,13 +25,13 @@ build() {
         --with-pkg-config-libdir=/usr/lib/pkgconfig
 
     make -j$(nproc) AR="ar"
-    make install
+    make DESTDIR="$1" install
 
     # Create non-wide symlinks for compatibility
     for lib in ncurses form panel menu; do
-        ln -sf lib${lib}w.so /usr/lib/lib${lib}.so
-        ln -sf lib${lib}w.a /usr/lib/lib${lib}.a 2>/dev/null || true
-        ln -sf ${lib}w.pc /usr/lib/pkgconfig/${lib}.pc 2>/dev/null || true
+        ln -sf "lib${lib}w.so" "$1/usr/lib/lib${lib}.so"
+        ln -sf "lib${lib}w.a" "$1/usr/lib/lib${lib}.a" 2>/dev/null || true
+        ln -sf "${lib}w.pc" "$1/usr/lib/pkgconfig/${lib}.pc" 2>/dev/null || true
     done
-    ln -sf /usr/include/ncursesw /usr/include/ncurses 2>/dev/null || true
+    ln -sf ncursesw "$1/usr/include/ncurses" 2>/dev/null || true
 }

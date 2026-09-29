@@ -1,8 +1,8 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for dhcpcd
+NAME="dhcpcd"
+VERSION="10.5.2"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://github.com/NetworkConfiguration/dhcpcd/archive/refs/tags/v10.5.2.tar.gz"
 
 build() {
     ./configure \

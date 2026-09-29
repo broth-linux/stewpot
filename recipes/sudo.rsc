@@ -1,8 +1,8 @@
-# Recipe for openssh
-NAME="openssh"
-VERSION="9.8"
+# Recipe for sudo
+NAME="sudo"
+VERSION="1.9.15"
 DEPENDS=""
-URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.8p1.tar.gz"
+URL="https://www.sudo.ws/dist/sudo-1.9.15p5.tar.gz"
 
 build() {
     ./configure \

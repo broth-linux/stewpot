@@ -1,8 +1,8 @@
-# Recipe for m4
-NAME="m4"
-VERSION="1.4.19"
+# Recipe for terminus-font
+NAME="terminus-font"
+VERSION="4.49.1"
 DEPENDS=""
-URL="https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.xz"
+URL="https://downloads.sourceforge.net/project/terminus-font/terminus-font-4.49/terminus-font-4.49.1.tar.gz"
 UPSTREAM_SOURCE=""
 
 build() {
@@ -13,6 +13,6 @@ build() {
         --localstatedir=/var
 
     make -j$(nproc 2>/dev/null || echo 1)
-    make DESTDIR="$BUILD_ROOT" install
+    make DESTDIR="$BUILD_ROOT" install-psf
 }
 
