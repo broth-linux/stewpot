@@ -1,0 +1,75 @@
+#!/bin/sh 
+# stewpot-checksum: Generate SHA-256 checksums for package sources
+set -eu
+
+die() {
+	printf 'Error: %s\n' "$1" >&2
+	exit 1
+}
+
+# Resolve SHA-256 binary dynamically
+if command -v sha256sum >/dev/null 2>&1; then
+	SHA256="sha256sum"
+elif command -v openssl >/dev/null 2>&1; then
+	SHA256="openssl dgst -sha256 -r"
+else
+	die "No SHA-256 tool found (need sha256sum or openssl)"
+fi
+
+[ $# -gt 0 ] || die "Usage: ${0##*/} <package-directory>"
+
+for pkg_dir in "$@"; do
+	pkg_dir="${pkg_dir%/}"
+	[ -d "$pkg_dir" ] || die "Directory not found: $pkg_dir"
+	[ -f "$pkg_dir/sources" ] || die "No sources file in: $pkg_dir"
+	
+	cache_dir="${XDG_CACHE_HOME:-$HOME:-/root}/.cache}/stewpot/sources"
+	mkdir -p "$cache_dir"
+
+	tmp_sums="$(mktemp)"
+
+	while IFS= read -r src || [ -n "$src" ]; do
+		case "$src" in
+			*://*)
+				filename="${src##*/}"
+				dest="$cache_dir/$filename"
+				if [ ! -f "$dest" ]; then
+					printf 'Fetching %s...\n' "$src"
+					curl -k -fLo "$dest" "$src" || die "Download failed: $src"
+				fi
+				file_to_hash="$dest"
+				;;
+			*)
+				file_to_hash="$pkg_dir/$src"
+				[ -f  "$file_to_hash" ] || die "Local file missing: $file_to_hash"
+				;;
+		esac
+		
+		hash_val=$($SHA256 "$file_to_hash" | cut -d ' ' -f 1)
+		printf '%s\n' "$hash_val" >> "$tmp_sums"
+	done < "$pkg_dir/sources"
+
+	mv "$tmp_sums" "$pkg_dir/checksums"
+	printf 'Generated %s/checksums\n' "$pkg_dir"
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

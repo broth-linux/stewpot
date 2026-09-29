@@ -54,6 +54,22 @@ strip_binaries() {
     find "$BUILD_ROOT" -type f -name "*.a" -exec strip --strip-debug {} + 2>/dev/null || true
 }
 
+taste_test() {
+	echo "[*] Taste testing binaries for missing shared libraries..."
+	local broken=0
+	sudo tastetest
+
+	if [ "$broken" -eq 1 ]; then
+		echo "[-] ERROR: Dish spoiled! Missing shared libraries detected."
+		exit 1
+	fi
+	echo "[*] Taste test passed. Yuumy! :)"
+}
+
+
+
+
+
 cook_ingredient() {
     local INGREDIENT="$1"
     local RECIPE="${RECIPES_DIR}/${INGREDIENT}.rsc"
@@ -125,6 +141,8 @@ cook_ingredient() {
     rm -rf "$BUILD_ROOT"
     mkdir -p "$BUILD_ROOT"
 
+
+
     echo "[*] Cooking ${NAME}-${VERSION}..."
 
     (
@@ -144,7 +162,10 @@ cook_ingredient() {
     fi
 
     rm -rf "$BUILD_SUBDIR"
+
+    taste_test
 }
+
 
 case "$COMMAND" in
     cook)
@@ -180,11 +201,14 @@ case "$COMMAND" in
                 DEPENDS=""
                 . "$RECIPE"
                 echo "$VERSION" > "$PKG_DB/version"
+                echo "$DEPENDS" > "/var/db/stew/installed/$INGREDIENT/depends"
                 [ -n "$DEPENDS" ] && echo "$DEPENDS" > "$PKG_DB/depends"
             fi
 
-            cp -a "$PKG_DIR/" /
+            tar -C "$PKG_DIR" -cf - . | tar -C / -xpf -
+	    sudo dishwash
             echo "[+] Successfully installed ${INGREDIENT}!"
+
         done
         ;;
 

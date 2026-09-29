@@ -1,0 +1,39 @@
+#!/bin/sh
+# Broth Linux Upstream Expiration Checker
+
+RECIPE_DIR="/usr/bin/recipes"
+
+echo "[*] Checking expiration dates on pantry ingredients..."
+
+for recipe in  "$RECIPE_DIR"/*.rsc; do
+	[ -f "$recipe" ] || continue
+
+	# Reset vars and source the recipe
+	NAME=$(grep -E '^NAME=' "$recipe" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+	VERSION=$(grep -E '^VERSION=' "$recipe" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+	UPSTREAM_SOURCE=$(grep -E '^UPSTREAM_SOURCE=' "$recipe" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+
+
+	# Skip recipes without an upstream git URL
+	if [ -z "$UPSTREAM_SOURCE" ]; then
+		continue
+	fi
+
+	echo -n "Checking $NAME (local: $VERSION)... "
+
+	# Grab the highest semver-like release tag from git
+	LATEST_TAG=$(git ls-remote --tags --refs "$UPSTREAM_SOURCE" 2>/dev/null \
+		| awk -F'/' '{print $NF}' \
+		| grep -E '^[vV]?[0-9]' \
+		| sort -V \
+		| tail -n1)
+
+	# Strip any leading 'v'
+	LATEST_VER=$(echo "$LATEST_TAG" | sed 's/^[vV]//')
+
+	if [ -n "$LATEST_VER" ] && [ "$LATEST_VER" != "$VERSION" ]; then
+		echo "STALE -> Upstream is $LATEST_VER"
+	else
+		echo "FRESH"
+	fi
+done

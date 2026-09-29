@@ -4,11 +4,10 @@
 set -eu
 
 RECIPES_DIR="/usr/bin/recipes"
-mkdir -p "$RECIPES_DIR"
 
 if [ -z "${1:-}" ]; then
-    echo "Usage: prepare <name> [version] [url] [depends]"
-    echo "Example: prepare libpng 1.6.43 https://example.com/libpng-1.6.43.tar.xz zlib"
+    echo "Usage: prepare <name> [version] [url] [depends] [upstream_url]"
+    echo "Example: prepare libpng 1.6.43 https://example.com/libpng-1.6.43.tar.xz zlib https://github.com/exmapleuser/examplerepo.git"
     exit 1
 fi
 
@@ -16,6 +15,7 @@ PKG_NAME="$1"
 PKG_VER="${2:-1.0.0}"
 PKG_URL="${3:-https://example.com/source/${PKG_NAME}-${PKG_VER}.tar.gz}"
 PKG_DEPS="${4:-}"
+PKG_UPSTREAM="${5:-}"
 
 TARGET_FILE="${RECIPES_DIR}/${PKG_NAME}.rsc"
 
@@ -24,12 +24,86 @@ if [ -f "$TARGET_FILE" ]; then
     exit 1
 fi
 
+
+
+# If you see a word wrapped in ** (e.g. *whale*) read it like its a varible.
+# Be the computer. I fucking hate repttive typing sowwy geyes.
+# E.G. SINCE whale IS NOW SET, BLUE * EQUALS WHAT?? shit 4 brains...
+
+
+# put 2 and 2 together genious. ** and ** wrapped words rhme. and so on.
+
+ 
+# " my fgwends are my --pals--, but it sorta is a huge stinky ++shame++"
+# " they can never --arouse--, miss obama is most ALMSOT to ++blame++. "
+# " girly chickens - you call them hens THATS ++LAME++ but i call em my --gals-- cus i got
+# " WHAT THEY MAY REFER TO AS - CHICKEN -- ++GAME++. LEGALLY. i shoot birsd AND ^burds^ ifywim... :))"
+# " APPLE FUGGIN PIE: yu and me both !!kno!! "that dude from the hotel, he got slapped at the 
+# !!REPTILE SH OW!!
+# with that uh,,, oh yeah - AYYY TONNYYYY" and that fuggin "GABAGOOL MA DON LIKE IN ITALY DONTYAKNUY"  and then he getS SHOT "<:0000 :((((!!!"???
+# i tink hid NAME wad maybe, uh,,,
+# --SALLLL--
+# OHHHHHH SHITTTT
+# GO TO SCHOOL?? WHO MAKEA DA RULES BUT HE AINT YOUR FRIEND??? THE FUCKING
+# princic - PAL GOD DAMN SOMEONE COOL ME OFF IM ON FIYA
+# ALSO GOD DAMNN! SOMEON CUT ME OFF!! IM NOT IN THE CAR AT ALL NOR WILL I BE FOR A DAY OR 2,
+# BUT CUT ME OFF AGAIN ASSHOLE ILL SHOW YUOU WHAT A REAL dot slash confiugure SCRIPT LOOKS LIKE ASSHAT PARTY WACK PENIS MUNHCING BASEBALL HAT
+
+
+
+# An Example GNU AutoTools recipe for dot-slash-configure scpts,
+# As well as an example cmake / ninja recipe and flags for projcts. that utizilze s scripts and .lo .h .a .so files,
+# also an example meson build script for whtvr tf meson is. Python? maybe actually ninja? fuck it who kiggidy karessss :^) !
+# and *finally* (i should assume * for da time bein) an example script for if u gotta end up using git clone. autoreconf or sum idfk about this one. I just do what im told.
+
+# ONLY A GODLY AMOUNT OF ADDERALL COULD HAVE BRING ME HERE TONIGHT: FOR FUTURE READERS::
+# I apoligize SO much for barfing everywhere on this OS. Only god, google gemini, and an amount of legal crack 
+# im embarresed to actually admit i took, so
+# good fukin luck trying to make sense of 99 pecent of this operating system. 
+
+
+
+# 	sowwy :/ :)? :)!
+# 	3 stages grienf: awww - sorry maybe i think ? - omyGOD horray i love u thanks for 4givin me u darn sliterhiN!!!
+#	
+#	dr seuss in this bih fuck yall
+ 
+
+# No bashims will be found throughout this autotools script, nor any following example build script, although the bash binarie and 
+# .rsc file are included in the base broth tarball. This is
+# purely for the option for a custom install after the original tarball 
+# has been setup ( or once broth is relying purely on bare metal (no custom hosts / chroot's). 
+# Any changes made to the custom stewpot package manager and subsequent
+# scripts MUST stay related to that script itself, OR be an 'uncooked' dish. 
+# Just as well, for pre-exisitng dish's with a (proposed update or fix) to an 
+# existing feature, it must again relate only to said dish. 
+
+# ONCE AGAIN: 
+# Pure posix std. variables and tool n0tayshun are used throughout ALL of these example build scripts.
+# Minimal flags are included by default to make any
+# possible future troubleshooting aseesyasp055abal if the defolt flags
+# do - somefukgging how - actually do end up breaking something on the 
+# first attempt at cooking $PKG.
+
+# IMPORTANT
+# ---------
+# IF SOMETHING DOES END UP BREAKING 
+# ON THE FIRST DEAFULT TEST RUN, CRY. 
+# IT'S YOUR FAULT AND YOU SHOULD'VE KNOWN BETTER.
+# DUMBASS. LINKUX FAKER OVER HERE. FHS ANYONE??
+# MAKE -J8 ANYONE?? BUT REALLY, START CRYING. ITS OVER ATHISPOINT.
+# rEeTURDED DUMYASS
+
+
+
+
 cat <<EOF > "$TARGET_FILE"
 # Recipe for ${PKG_NAME}
 NAME="${PKG_NAME}"
 VERSION="${PKG_VER}"
 DEPENDS="${PKG_DEPS}"
 URL="${PKG_URL}"
+UPSTREAM_SOURCE="${PKG_UPSTREAM}"
 
 build() {
     ./configure \\
@@ -41,6 +115,7 @@ build() {
     make -j\$(nproc 2>/dev/null || echo 1)
     make DESTDIR="\$BUILD_ROOT" install
 }
+
 EOF
 
 echo "[+] Recipe prepared: $TARGET_FILE"

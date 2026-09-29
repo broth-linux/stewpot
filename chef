@@ -1,0 +1,296 @@
+#!/bin/sh
+# Chef - Interactive kitchen interface for broth linux
+
+COOKBOOK="/usr/bin/recipes"
+INSTALLED="/var/db/stew/installed"
+FLAVORS_DIR="/etc/broth/flavors"
+
+mkdir -p "$FLAVORS_DIR"
+
+# Ensure dialog is availble
+if ! command -v dialog >/dev/null 2>&1; then
+	echo "Error: dialog is not installed." >&2
+	exit 1
+fi
+
+# Main Menu
+main_menu() {
+	while :; do
+		ACTION=$(dialog --clear \
+				--backtitle "Broth Linux - Kitchen Management" \
+				--menu "Select kitchen task:" 15 50 6 \
+				1 "Cook a recipe (Build & Install)" \
+				2 "Season food (Configure Flags)" \
+				3 "Inspect pantry (View installed)" \
+				4 "Scrape a pot  (Uninstall Package)" \
+				5 "Exit the kitchen" 3>&1 1>&2 2>&3)
+		case "$ACTION" in 5|"") clear; break ;; esac
+
+		case "$ACTION" in
+			1) cook_menu ;;
+			2) flavor_menu ;;
+			3) inspect_menu ;;
+			4) scrape_menu ;;
+		esac
+	done
+}
+
+# 1. Select a recipe from the cookbook and trigger stewpot
+cook_menu() {
+	PKGS=$(find "$COOKBOOK" -maxdepth 1 -name "*.rsc" -exec basename {} .rsc \; 2>/dev/null | sort)
+	if [ -z "$PKGS" ]; then
+		dialog --msgbox "No recipes found in $COOKBOOK." 7 40
+		return
+	fi
+
+	# Build menu pairs for dialog
+	MENU_ITEMS=""
+	for p in $PKGS; do
+		MENU_ITEMS="$MENU_ITEMS $p $p"
+	done
+
+	TMP="/tmp/chef.$$"
+	dialog --clear \
+		--backtitle "Broth Linux - Chef" \
+		--menu "Availble recipes:" 18 50 10 $MENU_ITEMS 2> "$TMP"
+	CHOSEN=$(cat "$TMP")
+	rm -f "$TMP"
+	[ -z "$CHOSEN" ] && return
+
+	clear
+	echo "======================================="
+	echo " Passing order to stewpot: $CHOSEN"
+	echo "======================================="
+	stewpot cook "$CHOSEN"
+	stewpot install "$CHOSEN"
+
+	echo ""
+	printf "Press Enter to return to the kitchen..."
+	read -r _
+}
+
+# 2. Checklist for package build toggles
+flavor_menu() {
+	PKGS=$(find "$COOKBOOK" -maxdepth 1 -name "*.rsc" -exec basename {} .rsc \; 2>/dev/null | sort)
+	if [ -z "$PKGS" ]; then
+		dialog --msgbox "No  recipes in $COOKBOOK." 7 40
+		return
+	fi
+
+	MENU_ITEMS=""
+	for p in $PKGS; do
+		MENU_ITEMS="$MENU_ITEMS $p $p"
+	done
+	TMP="/tmp/chef.$$"
+	dialog --clear \
+		--backtitle "Broth Linux - Chef" \
+		--title " [ Seasoning ] " \
+		--menu "Select package to configure:" 18 50 10 $MENU_ITEMS 2> "$TMP"
+	PKG=$(cat "$TMP")
+	rm -f "$TMP"
+	[ -z "$PKG" ] && return
+
+	FLAVOR_FILE="$COOKBOOK/$PKG.flavor"
+	if [ ! -f "$FLAVOR_FILE" ]; then
+		dialog --msgbox "No flavor profiles defined for $PKG.\nAdd a 'flavor profile' file to its recipe dir." 8 45
+		return
+	fi
+
+	SAVED_FLAVORS="$FLAVORS_DIR/$PKG"
+	CHECKLIST_ITEMS=""
+
+	# Read recipe/flavors (format: OPTION=on/off:Description text)
+	while IFS='=:' read -r opt default desc; do
+		[ -z "$opt" ] && continue
+		state="$default"
+		if [ -f "$SAVED_FLAVORS" ]; then
+			saved_val=$(grep "^{opt}=" "$SAVED_FLAVORS" | cut -d'=' -f2)
+			[ -n "$saved_val" ] && state="$saved_val"
+		fi
+		CHECKLIST_ITEMS="$CHECKLIST_ITEMS $opt \"$desc\" $state"
+	done < "$FLAVOR_FILE"
+
+	TMP="/tmp/chef.$$"
+	dialog --clear \
+		--backtitle "Broth Linux - Chef" \
+		--title " [ Seasoning: $PKG ] " \
+		--checklist "Toggle build options:" 18 60 8 $CHECKLIST_ITEMS 2> "$TMP"
+
+	CHOICES=$(cat "$TMP")
+	rm -f "$TMP"
+	[ -z "$CHOICES" ] && return
+
+	# Write selected choices to /etc/broth/flavors/$PKG
+	: > "$SAVED_FLAVORS"
+	while IFS='=:' read -r opt _ desc; do
+		[ -z "$opt" ] && continue
+		if echo "$CHOICES" | grep -qw "$opt"; then
+			echo "${opt}=on" >> "$SAVED_FLAVORS"
+		else
+			echo "${opt}=off" >> "$SAVED_FLAVORS"
+		fi
+	done < "$FLAVOR_FILE"
+
+	dialog --msgbox "Flavors saved for $PKG in $SAVED_FLAVORS" 6 45
+}
+
+# 3. View installed packages and their manifests
+inspect_menu() {
+    while :; do
+        PKGS=$(find "$INSTALLED" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
+        if [ -z "$PKGS" ]; then
+            dialog --msgbox "The pantry is empty ($INSTALLED is blank)." 7 45
+            return
+        fi
+
+        MENU_ITEMS=""
+        for p in $PKGS; do
+            MENU_ITEMS="$MENU_ITEMS $p $p"
+        done
+
+        TMP="/tmp/chef.$$"
+        dialog --clear \
+            --backtitle "Broth Linux - Chef" \
+            --title " [ Pantry Inspection ] " \
+            --ok-label "Manifest" \
+            --extra-button --extra-label "Scrape" \
+            --help-button --help-label "Fzy" \
+            --menu "Select installed dish to inspect:" 18 50 10 $MENU_ITEMS 2> "$TMP"
+        STATUS=$?
+        PKG=$(cat "$TMP")
+        rm -f "$TMP"
+
+        # Strip "HELP" prefix if help button was pressed
+        PKG=${PKG#HELP }
+
+        # Exit to main menu on Cancel or ESC
+        [ $STATUS -eq 1 ] || [ $STATUS -eq 255 ] && return
+        [ -z "$PKG" ] && return
+
+        MANIFEST="$INSTALLED/$PKG/manifest"
+
+        case "$STATUS" in
+            0) # View Manifest
+                if [ -f "$MANIFEST" ]; then
+                    dialog --title " [ Manifest: $PKG ] " --textbox "$MANIFEST" 20 65
+                else
+                    dialog --msgbox "No manifest file found for $PKG." 7 45
+                fi
+                ;;
+
+            3) # Scrape (Extra Button)
+                dialog --backtitle "Broth Linux - Chef" \
+                    --yesno "Are you sure you want to scrape '$PKG' from the pantry?" 7 50
+                if [ $? -eq 0 ]; then
+                    clear
+                    echo "Scraping $PKG..."
+                    stewpot dispell "$PKG"
+                    echo ""
+                    printf "Press Enter to return to pantry..."
+                    read -r dummy
+                fi
+                ;;
+
+            2) # Fzy Search (Help Button)
+                if [ -f "$MANIFEST" ]; then
+                    clear
+                    echo "Searching files in $PKG (ESC to abort):"
+                    MATCH=$(fzy < "$MANIFEST")
+                    if [ -n "$MATCH" ]; then
+                    	clear
+                    	echo "File: $MATCH"
+                        ls -lh "$MATCH" 2>/dev/null
+                        # Determine which package own this file
+                        FILE_TARGET="${MATCH#/}"
+                        OWNER=""
+                        for m in /var/db/stew/installed/*/manifest; do
+                        	[ -f "$m" ] || continue
+                        	if grep -qx "$FILE_TARGET" "$m" 2>/dev/null || grep -qx "/$FILE_TARGET" "$m" 2>/dev/null; then
+                        		OWNER=$(basename "$(dirname "$m")")
+                        		break
+                        	fi
+                        done
+
+                        if [ -n "$OWNER" ]; then
+                        	printf "\033[1:31mOwned by: %s\033[0m\n" "$OWNER"
+                        else
+                        	printf "\033[1:33mOwned by: (untracked / orphan)\033[0m\n"
+                        fi
+                        
+                        echo ""
+                        printf "Press Enter to return to pantry..."
+                        read -r dummy
+                    fi
+                else
+                    dialog --msgbox "No manifest file found for $PKG." 6 40
+                fi
+                ;;
+        esac
+    done
+}
+
+
+
+
+# 3. View installed packages and their manifests
+#inspect_menu() {
+#	PKGS=$(find "$INSTALLED" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
+#	if [ -z "$PKGS" ]; then
+#		dialog --msgbox "The pantry is empty ($INSTALLED is blank)." 7 45
+#		return
+#	fi
+#
+#	MENU_ITEMS=""
+#	for p in $PKGS; do
+#		MENU_ITEMS="$MENU_ITEMS $p $p"
+#	done
+#
+#	TMP="/tmp/chef.$$"
+#	dialog --clear \
+#		--backtitle "Broth Linux - Chef" \
+#		--title " [ Pantry Inspection ] " \
+#		--menu "Select installed dish to inspect:" 18 50 10 $MENU_ITEMS 2> "$TMP"
+#	PKG=$(cat "$TMP")
+#	rm -f "$TMP"
+#	[ -z "$PKG" ] && return
+#
+#	MANIFEST="$INSTALLED/$PKG/manifest"
+#	if [ -f "$MANIFEST" ]; then
+#		dialog --title " [ Manifest: $PKG ] " --textbox "$MANIFEST" 20 65
+#	else
+#		dialog --msgbox "No manifest file found for $PKG." 6 40
+#	fi
+#}
+
+# 4. Remove a package via scrape
+scrape_menu() {
+	PKGS=$(find "$INSTALLED" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
+	if [ -z "$PKGS" ]; then
+		dialog --msgbox "No packages to scrape." 6 35
+		return
+	fi
+	MENU_ITEMS=""
+	for p in $PKGS; do
+		MENU_ITEMS="$MENU_ITEMS $p $p"
+	done
+
+	TMP="/tmp/chef.$$"
+	dialog --clear \
+		--backtitle "Broth Linux - Chef" \
+		--title " [ Scrape Pot ] " \
+		--menu "Select package to purge:" 18 50 10 $MENU_ITEMS 2> "$TMP"
+	PKG=$(cat "$TMP")
+	rm -f "$TMP"
+	[ -z "$PKG" ] && return
+
+	dialog --yesno "Are you sure you want to scrape $PKG from the system?" 7 50
+	if [ $? -eq 0 ]; then
+		clear
+		echo "Scraping $PKG..."
+		spill "$PKG"
+		printf "Press Enter to return to the kitchen..."
+		read -r _
+	fi
+}
+
+main_menu
