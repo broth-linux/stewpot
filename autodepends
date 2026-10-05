@@ -1,0 +1,46 @@
+#!/bin/sh
+# autodepends: generates a baseline depends draft for an installed package
+PKG="$1"
+[ -z "$PKG" ] && { echo "Usage: autodepends <pkg>"; exit 1; }
+
+MANIFEST="/var/db/stew/installed/$PKG/manifest"
+[ -f "$MANIFEST" ] || { echo "Manifest not found for $PKG"; exit 1; }
+
+DEPS=""
+
+while IFS= read -r file; do
+	[ -f "$file" ] || continue
+	# Check if the file is an ELF binary/library
+	head -c 4 "$file" 2>/dev/null | grep -q ELF || continue
+
+	# Extract NEEDED libraries
+	libs=$(readelf -d "$file" 2>/dev/null | awk -F'[][]' '/NEEDED/ {print $2}')
+
+	for lib in $libs; do
+		# Ignore self and standard C runtime (libc is always implicit)
+		case "$lib" in
+			libc.so*|ld-musl*|ld-linux*) continue ;;
+		esac
+
+		# Find which installed package owns this library
+		base_lib="${lib%%.so*}.so"
+		
+		for m in /var/db/stew/installed/*/manifest; do
+			case "$m" in *"/$PKG/manifest") continue ;; esac
+			
+			if grep -q "/$base_lib" "$m" 2>/dev/null; then
+				owner=$(basename "$(dirname "$m")")
+				case " $DEPS " in
+					*" $owner "*) ;;
+					*) DEPS="$DEPS $owner" ;;
+				esac
+				break
+			fi
+		done
+	done
+done < "$MANIFEST"
+
+# Output unique sorted dependencies
+for d in $DEPS; do
+	echo "$d"
+done | sort -u

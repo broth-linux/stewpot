@@ -1,0 +1,37 @@
+#!/bin/sh
+# Usage: checkout <package>
+
+REPO_DIR="/var/db/stew/installed"
+SEEN=""
+
+resolve_deps() {
+	pkg="$1"
+	indent="$2"
+
+	# Avoid infinite loops / duplicate visits
+	case " $SEEN " in
+		*" $pkg "*) return 0 ;;
+	esac
+	SEEN="$SEEN $pkg"
+
+	dep_file="$REPO_DIR/$pkg/depends"
+
+	if [ -f "$dep_file" ]; then
+		while read -r dep make_or_run; do
+			# Skip comments and blank lines
+			[ -z "$dep" ] || [ "${dep###}" != "$dep" ] && continue
+
+			printf "%s-> %s\n" "$indent" "$dep"
+			resolve_deps "$dep" "  $indent"
+		done < "$dep_file"
+	fi
+}
+
+TARGET="$1"
+if [ -z "$TARGET" ]; then
+	echo "Usage: checkout <package>"
+	exit 1
+fi
+
+echo "$TARGET"
+resolve_deps "$TARGET" "  "

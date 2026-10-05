@@ -101,6 +101,7 @@ cook_ingredient() {
     VERSION=""
     URL=""
     DEPENDS=""
+    COMMIT=""
     NO_STRIP=""
 
     . "$RECIPE"
@@ -112,22 +113,71 @@ cook_ingredient() {
 
     echo "[+] Throwing ${INGREDIENT} into the pot..."
 
-    TARBALL=$(basename "$URL")
-    if [ ! -f "$CACHE_DIR/$TARBALL" ]; then
-        echo "[*] Fetching $URL..."
-        download_file "$URL" "$CACHE_DIR/$TARBALL" || {
-            echo "[-] ERROR: Failed to download $URL"
-            rm -f "$CACHE_DIR/$TARBALL"
-            exit 1
-        }
-    fi
+
+	case "$URL" in
+		git+*)
+			REPO_URL="${URL#git+}"
+			REPO_CACHE="$CACHE_DIR/${INGREDIENT}.git"
+			REPO_DIR="$WORK_DIR/src-${NAME}"
+
+			if [ -d "$REPO_CACHE" ]; then
+				echo "[*] Updating git mirror for ${INGREDIENT}..."
+				git -C "$REPO_CACHE" remote update --prune || {
+						echo "[-] ERROR: Failed  to update git mirror"
+						exit 1
+				}
+			else
+				echo "[*] Cloning git mirror for ${INGREDIENT}..."
+				git clone --mirror "$REPO_URL" "$REPO_CACHE" || {
+					echo "[-] ERROR: Failed to clone $REPO_URL"
+					rm -rf "$REPO_CACHE"
+					exit 1
+				}
+			fi
+
+			echo "[*] Checking out working tree..."
+			rm -rf "$REPO_DIR"
+			mkdir -p "$REPO_DIR"
+			git clone "$REPO_CACHE" "$REPO_DIR"
+
+			if [ -n "$COMMIT" ]; then 
+				git -C "$REPO_DIR" checkout "$COMMIT" || exit 1
+			elif [ -n "$VERSION" ]; then
+				git -C "$REPO_DIR" checkout "v$VERSION" 2>/dev/null || git -C "$REPO_DIR" checkout "$VERSION" 2>/dev/null || true
+			fi
+
+			# Pull submodules if present (needed by btop)
+			git -C "$REPO_DIR" submodule update --init --recursive
+			;;
+
+		*)
+		 	TARBALL=$(basename "$URL")
+   			 	if [ ! -f "$CACHE_DIR/$TARBALL" ]; then
+        			echo "[*] Fetching $URL..."
+        			download_file "$URL" "$CACHE_DIR/$TARBALL" || {
+            			echo "[-] ERROR: Failed to download $URL"
+            			rm -f "$CACHE_DIR/$TARBALL"
+            			exit 1
+        		}
+    		fi
+    	;;
+	esac
 
     local BUILD_SUBDIR="$WORK_DIR/src-${NAME}"
-    rm -rf "$BUILD_SUBDIR"
-    mkdir -p "$BUILD_SUBDIR"
 
-    echo "[*] Extracting $TARBALL..."
-    tar -xf "$CACHE_DIR/$TARBALL" -C "$BUILD_SUBDIR"
+
+
+	case "$URL" in
+		git+*)
+			:
+			;;
+		*)
+			rm -rf "$BUILD_SUBDIR"
+			mkdir -p "$BUILD_SUBDIR"
+			echo "[*] Extracting $TARBALL..."
+    		tar -xf "$CACHE_DIR/$TARBALL" -C "$BUILD_SUBDIR"
+    		;;
+    esac
 
     # Identify source root safely
     local TOP_DIR_COUNT=$(find "$BUILD_SUBDIR" -mindepth 1 -maxdepth 1 | wc -l)
@@ -193,7 +243,7 @@ case "$COMMAND" in
             PKG_DB="$DB_DIR/$INGREDIENT"
             mkdir -p "$PKG_DB"
 
-            ( cd "$PKG_DIR" && find . ! -type d | sed 's|^\.||' ) > "$PKG_DB/manifest"
+            ( cd "$PKG_DIR" && find . ! -type d | sed 's|^\.||' | sort ) > "$PKG_DB/manifest"
 
             if [ -f "$RECIPE" ]; then
                 NAME=""
