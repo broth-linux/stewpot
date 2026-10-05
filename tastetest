@@ -1,28 +1,45 @@
 #!/bin/sh
-# taste-test: Check system binaries for broken dynamic links
-
-set -e 
+# tastetest: Check system binaries for broken dynamic links and execution failures
+set -e
 
 DIR="${1:-/usr/bin}"
 FAILED=0
 
 echo "Checking the soup in $DIR..."
 
-for bin in "$DIR"/*; do
+[ -d "$DIR" ] && ITEMS="$DIR"/* || ITEMS="$DIR"
+for bin in $ITEMS; do
 	[ -x "$bin" ] || continue
 	[ -f "$bin" ] || continue
 
-	# Check if ldd detects missing libraries
-	if ldd "$bin" 2>/dev/null | grep -q "not found"; then
+	# 1. Skip non-ELF files (scripts, text files)
+	# Check the 4-byte ELF magic header (\x7fELF)
+	_magic=$(head -c 4 "$bin" 2>/dev/null || true)
+	if [ "$_magic" != "$(printf '\177ELF')" ]; then
+		continue
+	fi
+
+	# 2. Check if ldd detects missing shared libraries
+	if ldd "$bin" 2>&1 | grep -q "not found"; then
 		echo "[!] Tastes sour: $bin is missing shared libraries!"
 		ldd "$bin" 2>&1 | grep "not found"
 		FAILED=1
+		continue
 	fi
+
+	# 3. Pre-flight sanity probe on critical core build tools
+	case "$bin" in
+		*/readelf) "$bin" -v >/dev/null 2>&1 || { echo "[!] RANCID BINARY: $bin segfaulted!"; FAILED=1; } ;;
+		*/gcc) "$bin" --version >/dev/null 2>&1 || { echo "[!] RANCID BINARY: $bin segfaulted!"; FAILED=1; } ;;
+		*/make) "$bin" --version >/dev/null 2>&1 || { echo "[!] RANCID BINARY: $bin segfaulted!"; FAILED=1; } ;;
+		*/ninja) "$bin" --version >/dev/null 2>&1 || { echo "[!] RANCID BINARY: $bin segfaulted!"; FAILED=1; } ;;
+	esac
 done
 
 if [ "$FAILED" -eq 0 ]; then
-	echo "[*] Chef's kiss. All dynamic links are solid."
+	echo "[*] Chef's kiss. All dynamic links are still fresh."
+	exit 0
 else
-	echo "[!] Some dishes need to be remade."
+	echo "[!] Some dishes need to be remade." 
 	exit 1
-fi 
+fi

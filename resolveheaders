@@ -1,0 +1,66 @@
+#!/bin/sh
+# resolveheaders - Map missing C/C++ headers to broth linux packages
+
+set -eu
+
+ALMANAC="/usr/share/stewpot/header_map.tsv"
+RECIPES_DIR="${RECIPES_DIR:-/usr/bin/recipes}"
+REMOTE_INDEX_URL="https://raw.githubusercontent.com/broth-linux/stewpot/main/indices/header_map.tsv"
+
+if [ $# -lt 1 ]; then
+	echo "Usage: $(basename "$0") <header.h>"
+	exit 1
+fi
+
+HEADER="$1"
+HEADER_BASE=$(basename "$HEADER")
+
+echo "[*] Searching provider for headers: $HEADER"
+
+# 1. Check if an installed package provides it in /usr/include
+INSTALLED_MATCH=$(grep -l "/include/.*$HEADER_BASE\$" /var/log/stewpot/manifests/* 2>/dev/null | head -n 1 || true)
+if [ -n "$INSTALLED_MATCH" ]; then
+	PKG_NAME=$(basename "$INSTALLED_MATCH")
+	echo "[+] Found in INSTALLED package: $PKG_NAME"
+	echo "	--> Check CFLAG, /usr/include paths, or run: stewpot cook $PKG_NAME"
+	exit 0
+fi
+
+# 2. Check local offline almanac
+MATCH=""
+if [ -f "$ALMANAC" ]; then
+	MATCH=$(awk -v h="$HEADER" '$1 == h {print $2, $3}' "$ALMANAC")
+	if [ -z "$MATCH" ] && [ "HEADER" != "$HEADER_BASE" ]; then
+		MATCH=$(awk -v h="$HEADER_BASE" '$1 == h {print $2 $3}' "$ALMANAC")
+	fi
+fi
+
+# 3. Non-blocking upstream remote lookup fallback
+if [ -z "$MATCH" ] && command -v curl >/dev/null 2>&1; then
+	echo "[*] Not found in local cookbook. Querying master recipes..."
+	MATCH=$(curl -s --connect-timeout 2 "$REMOTE_INDEX_URL" 2>/dev/null | awk -v h="$HEADER" '$1 == h {print $2, $3}')
+fi
+
+# 4. Result reporting
+
+if [ -n "$MATCH" ]; then
+	PKG=$(echo "$MATCH" | awk '{print $1}')
+	URL=$(echo "$MATCH" | awk '{print $2}')
+
+	echo "[!] Header '$HEADER' is provided by: $PKG"
+	if [ -f "${RECIPES_DIR}/${PKG}.rsc "]; then
+		echo "	--> Recipe '${PKG}.rsc' exists in master recipe file."
+		echo "	--> Action: Cook it with: stewpot cook $PKG"
+	else
+		echo "	--> Recipe '${PKG}.rsc' has not been written yet."
+		echo " 	--> Upstream source: $URL"
+	fi
+else
+	echo "[-] No known dish found with '$HEADER' as a garnish."
+	exit 1
+fi
+
+
+
+
+	

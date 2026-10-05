@@ -1,0 +1,28 @@
+#!/bin/sh
+# taste-test: Check system binaries for broken dynamic links
+
+set -e 
+
+DIR="${1:-/usr/bin}"
+FAILED=0
+
+echo "Checking the soup in $DIR..."
+
+for bin in "$DIR"/*; do
+	[ -x "$bin" ] || continue
+	[ -f "$bin" ] || continue
+
+	# Check if ldd detects missing libraries
+	if ldd "$bin" 2>/dev/null | grep -q "not found"; then
+		echo "[!] Tastes sour: $bin is missing shared libraries!"
+		ldd "$bin" 2>&1 | grep "not found"
+		FAILED=1
+	fi
+done
+
+if [ "$FAILED" -eq 0 ]; then
+	echo "[*] Chef's kiss. All dynamic links are solid."
+else
+	echo "[!] Some dishes need to be remade."
+	exit 1
+fi 

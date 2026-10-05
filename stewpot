@@ -36,6 +36,64 @@ download_file() {
     fi
 }
 
+
+meson_flavor() {
+	local opt="$1"
+	local flag="${2:-$(echo "$opt" | tr '[:upper:]' '[:lower:]')}"
+	eval "val=\$$opt"
+	if [ "$val" = "on" ]; then
+		echo "-D${flag}=enabled"
+	else
+		echo "-D${flag}=disabled"
+	fi
+}
+
+make_flavor () {
+	local opt="$1"
+	local var="${2:-$opt}"
+	eval "val=\$$opt"
+	if [ "$val" = "on" ]; then
+		echo "${var}=1"
+	else
+		echo "${var}=0"
+	fi
+}
+
+conf_flavor() {
+	local opt="$1"
+	local flag="${2:-$(echo "$opt" | tr '[:upper:]' '[:lower:]')}"
+	local prefix="${3:-enable}"
+	eval "val=\$$opt"
+	if [ "$val" = "on" ]; then
+		echo "--${prefix}-${flag}"
+	else
+		case "$prefix" in
+			enable) echo "--disable-${flag}" ;;
+			with) echo "--without-${flag}" ;;
+		esac
+	fi
+}
+
+cmake_flavor() {
+	local opt="$1"
+	local flag="${2:-$opt}"
+	eval "val=\$$opt"
+	if [ "$val" = "on" ]; then
+		echo "-D${flag}=ON"
+	else
+		echo "-D${flag}=OFF"
+	fi
+}
+
+cargo_flavor() {
+	local opt="$1"
+	local feature="${2:-$(echo "$opt" | tr '[:upper:]' '[:lower:]')}"
+	eval "val=\$$opt"
+	[ "$val" = "on" ] && echo "--features ${feature}"
+}
+
+
+
 strip_binaries() {
     [ "${NO_STRIP:-0}" = "1" ] && return 0
     command -v strip >/dev/null 2>&1 || return 0
@@ -56,10 +114,7 @@ strip_binaries() {
 
 taste_test() {
 	echo "[*] Taste testing binaries for missing shared libraries..."
-	local broken=0
-	sudo tastetest
-
-	if [ "$broken" -eq 1 ]; then
+	if ! sudo tastetest; then
 		echo "[-] ERROR: Dish spoiled! Missing shared libraries detected."
 		exit 1
 	fi
@@ -78,6 +133,16 @@ cook_ingredient() {
         echo "[-] ERROR: Missing ingredient! No recipe found for '${INGREDIENT}' in $RECIPES_DIR"
         exit 1
     fi
+
+    # Pre-flight check: make sure core toolchain binaries aren't broken before cooking
+    for tool in /bin/sh /usr/bin/readelf /usr/bin/gcc /usr/bin/ninja; do
+    	if [ -x "$tool" ]; then
+    		tastetest "$tool" || {
+    			echo "[-] FATAL: Core tool $tool is broken or missing libraries!"
+    			exit 1
+    		}
+    	fi
+    done
 
     local DEPS=$(
         NAME="" VERSION="" URL="" DEPENDS=""
@@ -198,6 +263,23 @@ cook_ingredient() {
     (
         cd "$SRC_DIR"
         set -e
+        # Load defaults from recipe flavor definition
+        local FLAVOR_DEF="${RECIPES_DIR}/${NAME}.flavor"
+        if [ -f "$FLAVOR_DEF" ]; then
+        	while IFS='=:' read -r opt default desc; do
+        		[ -z "$opt" ] && continue
+        		eval "export $opt=\"$default\""
+        	done < "$FLAVOR_DEF"
+        fi
+
+        # Override with user choices saved from chef
+        local SAVED_FLAVOR="/etc/broth/flavors/$NAME"
+        if [ -f "$SAVED_FLAVOR" ]; then
+        	while IFS='=' read -r opt state; do
+        		[ -z "$opt" ] && continue
+        		eval "export $opt=\"$state\""
+        	done < "$SAVED_FLAVOR"
+        fi
         build
     )
     BUILD_STATUS=$?
@@ -213,7 +295,6 @@ cook_ingredient() {
 
     rm -rf "$BUILD_SUBDIR"
 
-    taste_test
 }
 
 

@@ -4,8 +4,17 @@
 COOKBOOK="/usr/bin/recipes"
 INSTALLED="/var/db/stew/installed"
 FLAVORS_DIR="/etc/broth/flavors"
+CHEF_CONF="/etc/broth/chef.conf"
+
 
 mkdir -p "$FLAVORS_DIR"
+
+# Source persistent chef options if present
+DEBUG_MODE="off"
+if [ -f "$CHEF_CONF "]; then
+	. "$CHEF_CONF"
+fi
+
 
 # Ensure dialog is availble
 if ! command -v dialog >/dev/null 2>&1; then
@@ -13,27 +22,109 @@ if ! command -v dialog >/dev/null 2>&1; then
 	exit 1
 fi
 
+
+
+
+# Options menu
+options_menu() {
+	while :; do
+		TMP="/tmp/chef.$$"
+		dialog --clear \
+			--backtitle "Broth Linux - Kitchen Management" \
+			--title " [ Kitchen Options and Settings ] " \
+			--checklist "Toggle head chef features and debugging:" 12 55 3 \
+			DEBUG "Enable autodepends (Dev Tools)" "$DEBUG_MODE" 2> "$TMP"
+		STATUS=$?
+		CHOICES=$(cat "$TMP")
+		rm -f "$TMP"
+
+		[ $STATUS -eq 1 ] || [ $STATUS -eq 255 ] && break
+
+		if echo "$CHOICES" | grep -qw "DEBUG"; then
+			DEBUG_MODE="on"
+		else
+			DEBUG_MODE="off"
+		fi
+
+		# Save configuration
+		mkdir -p "$(dirname "$CHEF_CONF")"
+		echo "DEBUG_MODE=\"$DEBUG_MODE\"" > "$CHEF_CONF"
+		break
+	done
+}
+
+
+
+
+
 # Main Menu
 main_menu() {
 	while :; do
-		ACTION=$(dialog --clear \
-				--backtitle "Broth Linux - Kitchen Management" \
-				--menu "Select kitchen task:" 15 50 6 \
-				1 "Cook a recipe (Build & Install)" \
-				2 "Season food (Configure Flags)" \
-				3 "Inspect pantry (View installed)" \
-				4 "Scrape a pot  (Uninstall Package)" \
-				5 "Exit the kitchen" 3>&1 1>&2 2>&3)
-		case "$ACTION" in 5|"") clear; break ;; esac
+	# Build main menu options
+	ITEMS="1 \"Cook a recipe (Build & Install)\" \
+		   2 \"Season food (Configure Flags)\" \
+		   3 \"Inspect pantry (View installed)\" \
+		   4 \"Spill a pot (Uninstall Package)\" \
+		   5 \"Kitchen Options (Settings)\""
 
+	if [ "$DEBUG_MODE" = "on" ]; then
+		ITEMS="$ITEMS 6 \"Autodepends (Scan ELF Dependencies)\""
+		ITEMS="$ITEMS 7 \"Exit the kitchen\""
+		EXIT_KEY="7"
+	else
+		ITEMS="$ITEMS 6 \"Exit the kitchen\""
+		EXIT_KEY="6"
+	
+	fi
+
+	TMP="/tmp/chef.$$"
+	eval "dialog --clear \
+		--backtitle \"Broth Linux - Kitchen Management\" \
+		--menu \"Select kitchen task:\" 18 55 8 $ITEMS" 2> "$TMP"
+		ACTION=$(cat "$TMP")
+		rm -f "$TMP"
+
+		
 		case "$ACTION" in
+			"$EXIT_KEY"|"") clear; break ;;
 			1) cook_menu ;;
 			2) flavor_menu ;;
 			3) inspect_menu ;;
 			4) scrape_menu ;;
+			5) options_menu ;;
+			6)
+				if [ "$DEBUG_MODE" = "on" ]; then
+					autodepends_menu
+				fi
+				;;
 		esac
 	done
 }
+
+
+
+
+
+#main_menu() {
+#	while :; do
+#		ACTION=$(dialog --clear \
+#				--backtitle "Broth Linux - Kitchen Management" \
+#				--menu "Select kitchen task:" 15 50 6 \
+#				1 "Cook a recipe (Build & Install)" \
+#				2 "Season food (Configure Flags)" \
+#				3 "Inspect pantry (View installed)" \
+#				4 "Scrape a pot  (Uninstall Package)" \
+#				5 "Exit the kitchen" 3>&1 1>&2 2>&3)
+#		case "$ACTION" in 5|"") clear; break ;; esac
+#
+#		case "$ACTION" in
+#			1) cook_menu ;;
+#			2) flavor_menu ;;
+#			3) inspect_menu ;;
+#			4) scrape_menu ;;
+#		esac
+#	done
+#}
 
 # 1. Select a recipe from the cookbook and trigger stewpot
 cook_menu() {
@@ -104,7 +195,7 @@ flavor_menu() {
 		[ -z "$opt" ] && continue
 		state="$default"
 		if [ -f "$SAVED_FLAVORS" ]; then
-			saved_val=$(grep "^{opt}=" "$SAVED_FLAVORS" | cut -d'=' -f2)
+			saved_val=$(grep "^${opt}=" "$SAVED_FLAVORS" | cut -d'=' -f2)
 			[ -n "$saved_val" ] && state="$saved_val"
 		fi
 		CHECKLIST_ITEMS="$CHECKLIST_ITEMS $opt \"$desc\" $state"
@@ -199,7 +290,7 @@ inspect_menu() {
                     if [ -n "$MATCH" ]; then
                     	clear
                     	echo "File: $MATCH"
-                        ls -lh "$MATCH" 2>/dev/null
+                        ls --color=always -lh "$MATCH" 2>/dev/null
                         # Determine which package own this file
                         FILE_TARGET="${MATCH#/}"
                         OWNER=""
@@ -212,9 +303,9 @@ inspect_menu() {
                         done
 
                         if [ -n "$OWNER" ]; then
-                        	printf "\033[1:31mOwned by: %s\033[0m\n" "$OWNER"
+                        	printf "\033[1;31mOwned by: %s\033[0m\n" "$OWNER"
                         else
-                        	printf "\033[1:33mOwned by: (untracked / orphan)\033[0m\n"
+                        	printf "\033[1;33mOwned by: (untracked / orphan)\033[0m\n"
                         fi
                         
                         echo ""
@@ -293,4 +384,47 @@ scrape_menu() {
 	fi
 }
 
+
+
+autodepends_menu() {
+	PKGS=$(find "$INSTALLED" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
+	if [ -z "$PKGS" ]; then
+		dialog --msgbox "The pantry is empty." 7 40
+		return
+	fi
+
+	MENU_ITEMS=""
+	for p in $PKGS; do
+		MENU_ITEMS="$MENU_ITEMS $p $p"
+	done
+
+	TMP="/tmp/chef.$$"
+	dialog --clear \
+		--backtitle "Broth Linux - Chef Developer Tools" \
+		--title " [ Inspect Dependencies (ELF) ] " \
+		--menu "Select installed package to scan:" 18 50 10 $MENU_ITEMS 2> "$TMP"
+	PKG=$(cat "$TMP")
+	rm -f "$TMP"
+	[ -z "$PKG" ] && return
+
+	clear
+	echo "====================================="
+	echo " Scanning dependencies for: $PKG "
+	echo "====================================="
+	echo ""
+	if command -v autodepends >/dev/null 2>&1; then
+		autodepends "$PKG"
+	elif [ -x "/home/spgit/autodepends" ]; then
+		"/home/spgit/autodepends" "$PKG"
+	else
+		echo "[-] Error: autodepends script not found."
+	fi
+	echo ""
+	printf "Press Enter to return to the kitchen..."
+	read -r _
+}
+
 main_menu
+
+
+
