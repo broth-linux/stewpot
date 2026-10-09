@@ -25,7 +25,7 @@ build() {
         --with-pkg-config-libdir=/usr/lib/pkgconfig
 
     make -j$(nproc) AR="ar"
-    make DESTDIR="$1" install
+    make DESTDIR="$BUILD_ROOT" install
 
     # Create non-wide symlinks for compatibility
     for lib in ncurses form panel menu; do

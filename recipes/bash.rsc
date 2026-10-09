@@ -12,5 +12,5 @@ build() {
         --disable-nls
 
     make -j$(nproc)
-    make install
+    make DESTDIR="$BUILD_ROOT" install
 }

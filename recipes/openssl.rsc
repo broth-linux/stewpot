@@ -15,5 +15,5 @@ build() {
 	no-tests
 
     make -j$(nproc)
-    make install_sw
+    make DESTDIR="$BUILD_ROOT" install_sw
 }

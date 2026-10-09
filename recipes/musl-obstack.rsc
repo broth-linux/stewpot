@@ -1,10 +1,12 @@
-# Recipe for autoconf
-NAME="autoconf"
-VERSION="2.71"
+# Recipe for musl-obstack
+NAME="musl-obstack"
+VERSION="1.2.3"
 DEPENDS=""
-URL="https://ftp.gnu.org/gnu/autoconf/autoconf-2.73.tar.xz"
+URL="https://github.com/void-linux/musl-obstack/archive/refs/tags/v1.2.3.tar.gz"
+UPSTREAM_SOURCE=""
 
 build() {
+	./bootstrap.sh
     ./configure \
         --prefix=/usr \
         --sysconfdir=/etc \

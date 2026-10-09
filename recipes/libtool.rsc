@@ -1,8 +1,9 @@
-# Recipe for autoconf
-NAME="autoconf"
-VERSION="2.71"
+# Recipe for libtool
+NAME="libtool"
+VERSION="2.6.2"
 DEPENDS=""
-URL="https://ftp.gnu.org/gnu/autoconf/autoconf-2.73.tar.xz"
+URL="https://ftp.gnu.org/gnu/libtool/libtool-2.6.2.tar.xz"
+UPSTREAM_SOURCE=""
 
 build() {
     ./configure \

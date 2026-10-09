@@ -22,8 +22,8 @@ build() {
 	-Dxkb_bin_dir=/usr/bin
 
     ninja -C build
-    ninja -C build install
-	
+    DESTDIR="$BUILD_ROOT" ninja -C build install
+	chmod u+s "$BUILD_ROOT/usr/bin/Xorg" 2>/dev/null || true	
 
 }
 

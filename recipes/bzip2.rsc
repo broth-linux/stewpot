@@ -8,6 +8,13 @@ UPSTREAM_SOURCE=""
 build() {
 
     make -f Makefile-libbz2_so
-   
+   	make clean
+
+   	make
+
+   	make PREFIX="$BUILD_ROOT/usr" install
+
+   	mkdir -p "$BUILD_ROOT/usr/lib"
+   	cp -a libbz2.so* "$BUILD_ROOT/usr/lib/"
 }
 

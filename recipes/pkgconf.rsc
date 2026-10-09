@@ -12,7 +12,7 @@ build() {
         --with-pkg-config-dir=/usr/lib/pkgconfig:/usr/share/pkgconfig
 
     make -j$(nproc)
-    make install
+    make DESTDIR="$BUILD_ROOT" install
 
     # Symlink to standard pkg-config names
     ln -sf pkgconf /usr/bin/pkg-config

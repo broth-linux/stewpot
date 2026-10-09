@@ -32,5 +32,5 @@ build() {
     touch aclocal.m4 configure Makefile.in
 
     make -j$(nproc) AUTOCONF="true" AUTOMAKE="true" AUTOHEADER="true" ACLOCAL="true"
-    make install AUTOCONF="true" AUTOMAKE="true" AUTOHEADER="true" ACLOCAL="true"
+    make DESTDIR="$BUILD_ROOT" install AUTOCONF="true" AUTOMAKE="true" AUTOHEADER="true" ACLOCAL="true"
 }

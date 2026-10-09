@@ -8,6 +8,6 @@ build() {
     ./configure \
      --prefix=/usr
 
-    make -j8
-    make install
+    make -j$(nproc)
+    make DESTDIR="$BUILD_ROOT" install
 }

@@ -9,7 +9,7 @@ build() {
 	--prefix=/usr \
 	--buildtype=release
     ninja -C build
-    ninja -C build install
+    DESTDIR="$BUILD_ROOT" ninja -C build install
     
 }
 

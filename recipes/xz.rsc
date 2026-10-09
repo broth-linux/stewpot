@@ -14,5 +14,5 @@ build() {
         --docdir=/usr/share/doc/xz-5.6.2
 
     make -j$(nproc)
-    make install
+    make DESTDIR="$BUILD_ROOT" install
 }

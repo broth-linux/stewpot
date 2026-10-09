@@ -1,6 +1,6 @@
 NAME="grub"
 VERSION="2.12"
-DEPENDS=""
+DEPENDS="gawk"
 URL="https://ftp.gnu.org/gnu/grub/grub-2.12.tar.xz"
 
 build() {
@@ -14,6 +14,9 @@ build() {
         --with-platform=efi \
         --target=x86_64
 
+	mkdir -p grub-core
+	touch grub-core/extra_deps.lst
+
     make -j$(nproc)
-    make install
+    make DESTDIR="$BUILD_ROOT" install
 }

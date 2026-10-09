@@ -19,5 +19,5 @@ build() {
         --disable-nls
 
     make -j$(nproc) AR="ar" RANLIB="ranlib"
-    make install
+    make DESTDIR="$BUILD_ROOT" install
 }

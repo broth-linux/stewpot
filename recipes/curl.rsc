@@ -18,6 +18,6 @@ build() {
 
 
     make
-    make install
+    make DESTDIR="$BUILD_ROOT" install
 	
 }

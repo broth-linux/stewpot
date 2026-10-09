@@ -1,8 +1,9 @@
-# Recipe for autoconf
-NAME="autoconf"
-VERSION="2.71"
-DEPENDS=""
-URL="https://ftp.gnu.org/gnu/autoconf/autoconf-2.73.tar.xz"
+# Recipe for automake
+NAME="automake"
+VERSION="1.16.5"
+DEPENDS="autoconf perl"
+URL="https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.xz"
+UPSTREAM_SOURCE=""
 
 build() {
     ./configure \

@@ -1,8 +1,9 @@
-# Recipe for autoconf
-NAME="autoconf"
-VERSION="2.71"
+# Recipe for gawk
+NAME="gawk"
+VERSION="5.4.1"
 DEPENDS=""
-URL="https://ftp.gnu.org/gnu/autoconf/autoconf-2.73.tar.xz"
+URL="https://ftp.gnu.org/gnu/gawk/gawk-5.4.1.tar.xz"
+UPSTREAM_SOURCE=""
 
 build() {
     ./configure \

@@ -1,7 +1,7 @@
 # Recipe for git
 NAME="git"
 VERSION="2.44.0"
-DEPENDS=""
+DEPENDS="curl openssl zlib"
 URL="https://mirrors.edge.kernel.org/pub/software/scm/$NAME/$NAME-$VERSION.tar.xz"
 
 build() {

@@ -13,5 +13,5 @@ build() {
         --without-guile
 
     make
-    make DESTDIR="/mnt/broth" install
+    make DESTDIR="$BUILD_ROOT" install
 }

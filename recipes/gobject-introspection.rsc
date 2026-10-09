@@ -12,6 +12,6 @@ build() {
 		--buildtype=release
 
 	ninja -C build -j8
-	ninja -C build install
+	DESTDIR="$BUILD_ROOT" ninja -C build install
 }
 

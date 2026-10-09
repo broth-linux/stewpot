@@ -1,8 +1,9 @@
-# Recipe for autoconf
-NAME="autoconf"
-VERSION="2.71"
-DEPENDS=""
-URL="https://ftp.gnu.org/gnu/autoconf/autoconf-2.73.tar.xz"
+# Recipe for scrcpy
+NAME="scrcpy"
+VERSION="5.0"
+DEPENDS="ffmpeg sdl2 libusb openssl zlib"
+URL="https://github.com/Genymobile/scrcpy/archive/refs/tags/v5.0.tar.gz"
+UPSTREAM_SOURCE="https://github.com/Genymobile/scrcpy.git"
 
 build() {
     ./configure \

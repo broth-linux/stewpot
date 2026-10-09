@@ -7,10 +7,11 @@ build() {
     ./Configure -des \
         -Dprefix=/usr \
         -Dvendorprefix=/usr \
-        -Duseithreads \
-        -Dman1dir=none \
-        -Dman3dir=none
-
+        -Dusethreads \
+        -Duseshrplib \
+        -Dman1dir='' \
+        -Dman3dir=''
+        
     make -j$(nproc)
-    make install
+    make DESTDIR="$BUILD_ROOT" install
 }

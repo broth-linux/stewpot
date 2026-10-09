@@ -1,12 +1,17 @@
 # Recipe for meson
 NAME="meson"
-VERSION="1.12.1"
+VERSION="1.4.0"
 DEPENDS=""
-URL="https://github.com/mesonbuild/meson/releases/download/1.12.1/meson-1.12.1.tar.gz"
+URL="https://files.pythonhosted.org/packages/source/m/meson/meson-1.4.0.tar.gz"
 
 
-cd meson-1.12.1
-pip3 install --no-deps --no-build-isolation --prefix=/usr --root="$BUILD_ROOT" .
+build() {
+
+	[ -f "pyproject.toml" ] || cd meson-* 2>/dev/null || true
+
+	pip3 install --no-deps --no-build-isolation --root="$BUILD_ROOT" --prefix=/usr .
+
+}
 
 #python3 setup.py build
 #python3 setup.py install \

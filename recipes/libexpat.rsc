@@ -2,17 +2,25 @@
 NAME="libexpat"
 VERSION="2.8.5"
 DEPENDS=""
-URL="https://github.com/libexpat/libexpat/releases/download/R_2_8_5/expat-2.8.5.tar.xz"
-UPSTREAM_SOURCE=""
+URL="https://github.com/libexpat/libexpat/archive/refs/tags/R_2_8_5.tar.gz"
+UPSTREAM_SOURCE="https://github.com/libexpat/libexpat.git"
+
+
+
 
 build() {
-    ./configure \
-        --prefix=/usr \
-        --sysconfdir=/etc \
-        --mandir=/usr/share/man \
-        --localstatedir=/var
+	cd /tmp/stew-pot-workspace/src-libexpat/libexpat-*/expat || exit 1
+	
+    cmake -B build -G Ninja\
+    	-DCMAKE_INSTALL_PREFIX=/usr \
+    	-DCMAKE_BUILD_TYPE=Release \
+    	-DCMAKE_INSTALL_LIBDIR=lib \
+    	-DBUILD_SHARED_LIBS=ON \
+    	-DEXPAT_BUILD_DOCS=OFF \
+    	-DEXPAT_BUILD_EXAMPLES=OFF \
+		-DEXPAT_BUILD_TESTS=OFF    	
 
-    make -j$(nproc 2>/dev/null || echo 1)
-    make DESTDIR="$BUILD_ROOT" install
+    ninja -C build -j8
+    DESTDIR="$BUILD_ROOT" ninja -C build install
 }
 

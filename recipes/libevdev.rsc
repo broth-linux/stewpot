@@ -11,8 +11,8 @@ build() {
 	-Dtests=disabled \
 	-Ddocumentation=disabled
 
-ninja -C build
-ninja -C build install
+	ninja -C build
+	DESTDIR="$BUILD_ROOT" ninja -C build install
 
 
 }

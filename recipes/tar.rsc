@@ -11,5 +11,5 @@ FORCE_UNSAFE_CONFIGURE=1 ./configure \
 	--disable-nls
 
     make -j$(nproc)
-    make install
+    make DESTDIR="$BUILD_ROOT" install
 }

@@ -9,6 +9,6 @@ build() {
 	perl Makefile.PL
 	make
 	make test
-	make install
+	make DESTDIR="$BUILD_ROOT" install
 }
 

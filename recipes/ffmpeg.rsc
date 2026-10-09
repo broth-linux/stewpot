@@ -1,8 +1,9 @@
-# Recipe for autoconf
-NAME="autoconf"
-VERSION="2.71"
-DEPENDS=""
-URL="https://ftp.gnu.org/gnu/autoconf/autoconf-2.73.tar.xz"
+# Recipe for ffmpeg
+NAME="ffmpeg"
+VERSION="9.0.2"
+DEPENDS="openssl zlib"
+URL="https://github.com/FFmpeg/FFmpeg/archive/refs/tags/n9.0.2.tar.gz"
+UPSTREAM_SOURCE="https://github.com/FFmpeg/FFmpeg.git"
 
 build() {
     ./configure \
