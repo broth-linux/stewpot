@@ -48,7 +48,7 @@ if [ -n "$MATCH" ]; then
 	URL=$(echo "$MATCH" | awk '{print $2}')
 
 	echo "[!] Header '$HEADER' is provided by: $PKG"
-	if [ -f "${RECIPES_DIR}/${PKG}.rsc "]; then
+	if [ -f "${RECIPES_DIR}/${PKG}.rsc " ]; then
 		echo "	--> Recipe '${PKG}.rsc' exists in master recipe file."
 		echo "	--> Action: Cook it with: stewpot cook $PKG"
 	else

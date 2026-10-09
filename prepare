@@ -13,7 +13,7 @@ fi
 
 PKG_NAME="$1"
 PKG_VER="${2:-1.0.0}"
-PKG_URL="${3:-}"
+RAW_URL="${3:-}"
 PKG_DEPS="${4:-}"
 PKG_UPSTREAM="${5:-}"
 
