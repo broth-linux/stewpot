@@ -1,0 +1,33 @@
+#!/bin/sh
+# seasonings: Extract build toggles for Broth Linux flavors
+# Usage: seasonings <source_directory> [flavor_mode]
+
+set -eu
+
+SRC_DIR="${1:-.}"
+MODE="${2:-list}" # "list" (clean flags) or "flavor" (OPTION=default:desc format)
+
+if [ ! -d "$SRC_DIR" ]; then
+	printf '[-] Error: "%s" is not a directory.\n' "$SRC_DIR" >&2
+	exit 1
+fi
+
+# 1. Meson build system
+if [ -f "$SRC_DIR/meson_options.txt" ] || [ -f "$SRC_DIR/meson_options" ]; then
+	printf '[*] Build system: Meson\n' >&2
+	find "$SRC_DIR" -maxdepth 2 -type f \( -name "meson_options.txt" -o -name "meson_options" \) | while IFS= read -r f; do
+		awk -v mode="$MODE" -v q="'" ''
+			/option\(/ {
+				name = ""; val = "off"; desc = "" 
+				
+				# Parse option name between single quotes
+				split($0, parts, q)
+				if (length(parts) >= 2) {
+					name = parts[2]
+				}
+
+				# Check deafults value
+				if ($0 ~ /value[[:space:]]*:[[:space:]]*true/) val = "on"
+
+				# Extract description if present
+				if (match($0, /description[[:space:]]*:[[:space:]]*'\"/, "'

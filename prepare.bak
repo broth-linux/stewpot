@@ -13,26 +13,9 @@ fi
 
 PKG_NAME="$1"
 PKG_VER="${2:-1.0.0}"
-PKG_URL="${3:-}"
+PKG_URL="${3:-https://example.com/source/${PKG_NAME}-${PKG_VER}.tar.gz}"
 PKG_DEPS="${4:-}"
 PKG_UPSTREAM="${5:-}"
-
-
-# Parse and normalize URL
-if [ -z "$RAW_URL" ]; then
-	PKG_URL="https://example.com/source/${PKG_NAME}-${PKG_VER}.tar.gz"
-else
-	case "$RAW_URL" in
-		http://*|https://*|git+*) PKG_URL="$RAW_URL" ;;
-		*) PKG_URL="https://${RAW_URL}" ;;
-	esac
-
-	case "$PKG_URL" in
-		*.tar.gz|*.tar.xz|*.tar.bz2|*.tgz|*.zip|*.git|git+*) ;;
-		*) PKG_URL="${PKG_URL}.tar.gz" ;;
-	esac
-fi
-
 
 TARGET_FILE="${RECIPES_DIR}/${PKG_NAME}.rsc"
 
