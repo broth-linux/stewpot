@@ -6,10 +6,11 @@ URL="https://github.com/anholt/libepoxy/archive/refs/tags/1.5.10.tar.gz"
 
 build() {
     meson setup build \
-        --prefix=/usr \
+	--prefix=/usr \
+	--libdir=/usr/lib \
 	--buildtype=release \
 	-Degl=no \
-	-Dglx=no \
+	-Dglx=yes \
 	-Dtests=false
 
 
