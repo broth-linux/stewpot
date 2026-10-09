@@ -1,0 +1,4 @@
+UTF8=on:Enable_UTF-8_terminal_support
+STATIC=off:Build_statically_linked_binary
+SIXELS=off:Enable_sixel_image_passthrough
+UTEMPTER=off:System_utempter_session_logging

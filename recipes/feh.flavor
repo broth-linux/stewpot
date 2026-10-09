@@ -1,0 +1,2 @@
+XINERAMA=off:Enables_Xinerama_MultiMonitor_Support
+CURL=off:Enables_Fetching_Remote_URLS

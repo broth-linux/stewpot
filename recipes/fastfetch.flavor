@@ -1,0 +1,8 @@
+ENABLE_IMAGE_LOGO=off:Support_Graphical_Logo_Rendering
+ENABLE_CHAFA=off:Render_terminal_graphics_via_chafe
+ENABLE_SIXEL=off:Direct_sixel_image_output
+ENABLE_LUA=off:Enable_Lua_Configuration_scripting
+ENABLE_QUICKJS=off:Enable_QuickJS_script_engine
+ENABLE_LIBZFS=off:ZFS_FILESYSTEM_USAGESTATS
+ENABLE_IMAGEMAGICK7=off:ImageMagick_7_img_format
+ENABLE_WCWIDTH=on:Accurate_terminal_wdth_calculatoins
