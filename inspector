@@ -21,19 +21,85 @@ for recipe in  "$RECIPE_DIR"/*.rsc; do
 
 	echo -n "Checking $NAME (local: $VERSION)... "
 
-	# Grab the highest semver-like release tag from git
-	LATEST_TAG=$(git ls-remote --tags --refs "$UPSTREAM_SOURCE" 2>/dev/null \
-		| awk -F'/' '{print $NF}' \
-		| grep -E '^[vV]?[0-9]' \
-		| sort -V \
-		| tail -n1)
+		LATEST_VER=$(git ls-remote --tags --refs "$UPSTREAM_SOURCE" 2>/dev/null \
+			| awk -F'/' '{print $NF}' \
+			| grep -F -v '^{}' \
+			| grep -v -i -E '(alpha|beta|rc|pre|dev|\.git|[0-9]{7,})' \
+			| sed -E 's/^[a-zA-Z_-]*([0-9])/\1/; s/_/./g; s/-.*//' \
+			| awk -v pkg="$NAME" -v v="$VERSION" '
+				pkg == "libpng"			{ if ($0 ~ /^1\.6\.[0-9]+$/) print; next }
+				pkg == "libwebp"		{ if ($0 ~ /^1\.[0-9]+(\.[0-9]+)*$/) print; next }
+				pkg == "inih"			{ if ($0 ~ /^[0-9]+$/) print; next }
+				pkg == "libjpeg-turbo"	{ if ($0 ~ /^[1-3]\.[0-9]+(\.[0-9]+)*$/) print; next }
+				{ if ($0 ~ /^[0-9]+(\.[0-9]+)+$/) print }
+			' | sort -V | tail -n1)
 
-	# Strip any leading 'v'
-	LATEST_VER=$(echo "$LATEST_TAG" | sed 's/^[vV]//')
 
-	if [ -n "$LATEST_VER" ] && [ "$LATEST_VER" != "$VERSION" ]; then
+	
+	if [ -z "$LATEST_VER" ]; then
+		echo "UNKNOWN"
+	elif [ "$LATEST_VER" = "$VERSION" ]; then
+		echo "FRESH"
+	elif [ "$(printf '%s\n%s\n' "$VERSION" "$LATEST_VER" | sort -V | tail -n1)" = "$LATEST_VER" ]; then
 		echo "STALE -> Upstream is $LATEST_VER"
 	else
-		echo "FRESH"
+		echo "FRESH (Ahead: $VERSION > $LATEST_VER)"
 	fi
 done
+
+
+
+
+
+	# Grab clean semver-like release tags from git, filtering out prerelease and ^{}
+#	LATEST_VER=$(git ls-remote --tags --refs "$UPSTREAM_SOURCE" 2>/dev/null \
+#		| awk -F'/' '{print $NF}' \
+#		| grep -F -v '^{}' \
+#		| grep -v -i -E '(alpha|beta|rc|pre|dev|\.git|[0-9]{7,})' \
+#		| sed -E 's/^[a-zA-Z_-]*([0-9])/\1/; s/_/./g; s/-.*//' \
+#		| grep -E "^${MAJOR:-[0-9]+}\.[0-9]+(\.[0-9]+)*$" \
+#		| sort -V \
+#		| tail -n1)
+
+	# Determine component count and base prefix from local version
+#	NUM_DOTS=$(echo "$VERSION" | tr -cd '.' | wc -c)
+#	MAJOR=$(echo "$VERSION" | cut -d'.' -f1 | tr -cd '0-9')
+#	MINOR=$(echo "$VERSION" | cut -d'.' -f2 | tr -cd '0-9')
+#
+#	# Fetch raw tags, strip dereferences and prerelease keywords
+#	TAGS=$(git ls-remote --tags --refs "$UPSTREAM_SOURCE" 2>/dev/null \
+#		| awk -F'/' '{printf $NF}' \
+#		| grep -F -v '^{}' \
+#		| grep -v -i -E '(alpha|beta|rc|pre|dev|\.git|[0-9]{7,})')
+#
+#	# If package uses a minor branch (like libpng 1.6.x), pin MAJOR.MINOR
+#	if [ "$NAME" = "libpng" ]; then
+#		LATEST_VER=$(echo "$TAGS" | sed -E 's/^[a-zA-Z_-]*([0-9])/\1/; s/_/./g; s/-.*//' \
+#			| grep -E "^1\.6\.[0-9]+$" | sort -V | tail -n1)
+#	elif [ "$NUM_DOTS" -eq 0 ]; then
+#		# Handle single-integer tags (like inih r59)
+#		LATEST_VER=$(echo "$TAGS" | sed -E 's/^[a-zA-Z_-]*([0-9])/\1/; s/_/./g; s/-.*//' \
+#			| grep -E '^[0-9]+$' | sort -V | tail -n1)
+#		else
+#			# Handle standard semver tags
+#			LATEST_VER=$(echo "$TAGS" \
+#			| awk -F'/' '{print $NF}' \
+#			| grep -F -v '^{}' \
+#			| grep -v -i -E '(alpha|beta|rc|pre|dev|\.git|[0-9]{7,})' \
+#			| sed -E 's/^[a-zA-Z_-]*([0-9])/\1/; s/_/./g; s/-.*//' \
+#			| grep -E '^[0-9]+(\.[0-9]+)*$' \
+#			| sort -V \
+#			| tail -n1)
+#	fi
+
+
+
+
+
+
+
+
+
+
+
+
