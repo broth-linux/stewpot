@@ -25,17 +25,14 @@ while IFS= read -r file; do
 		# Find which installed package owns this library
 		base_lib="${lib%%.so*}.so"
 		
-		for m in /var/db/stew/installed/*/manifest; do
+		for m in $(grep -l "$/base_lib" /var/db/stew/installed/*/manifest 2>/dev/null); do
 			case "$m" in *"/$PKG/manifest") continue ;; esac
-			
-			if grep -q "/$base_lib" "$m" 2>/dev/null; then
 				owner=$(basename "$(dirname "$m")")
 				case " $DEPS " in
 					*" $owner "*) ;;
 					*) DEPS="$DEPS $owner" ;;
 				esac
-				break
-			fi
+			break
 		done
 	done
 done < "$MANIFEST"
