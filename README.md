@@ -26,6 +26,16 @@ Broth Linux uses a modular set of standalone POSIX shell utilities to manage pac
 
 ---
 
+## Architectural Philosophy & Heritage
+
+Broth Linux synthesizes three distinct lineages of source-based computing to build a lean, pragmatic, and self-hosting OS:
+
+* **Source Mage Heritage (`chef`):** Reviving the interactive, declarative recipe workflow of Source Mage. Package selection and build orchestration happen through `chef`—an interactive terminal interface paired with automated dependency tracking (`autodepends`)—without relying on bitrotted grimoires or complex scripting baggage.
+* **KISS Radical Minimalism:** Anchored entirely to a `musl libc` and `BusyBox` base. The distribution eliminates `glibc`, `systemd`, and monolithic GNU coreutils abstractions. Every package builds through plain, transparent POSIX shell recipes (`.rsc`) logging manifests directly to `/var/db/stew/installed/`.
+* **Slackware Pragmatism:** Following the classic principle of stripping away fragile tooling layers in favor of predictable, debuggable shell utilities. Software compiles as close to upstream as possible, prioritizing raw system stability, clean `DESTDIR` staging, and user sovereignty over opaque packaging automation.
+
+---
+
 ## Getting Started
 
 ### Installation
