@@ -3,6 +3,7 @@
 *.tar.xz
 *.o
 *.out
+fastautodepends
 /tmp/
 /build/
 
