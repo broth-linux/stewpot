@@ -22,22 +22,22 @@ trap cleanup EXIT INT TERM
 
 echo "[*] Initializing Broth directory structure at $TARGET..."
 mkdir -p "$TARGET/bin" \
-mkdir -p "$TARGET/sbin" \
-mkdir -p "$TARGET/usr/bin" \
-mkdir -p "$TARGET/usr/sbin" \
-mkdir -p "$TARGET/usr/lib" \
-mkdir -p "$TARGET/usr/include" \
-mkdir -p "$TARGET/usr/share" \
-mkdir -p "$TARGET/etc" \
-mkdir -p "$TARGET/dev/pts" \
-mkdir -p "$TARGET/proc" \
-mkdir -p "$TARGET/sys" \
-mkdir -p "$TARGET/tmp" \
-mkdir -p "$TARGET/run" \
-mkdir -p "$TARGET/var/db/stew/installed" \
-mkdir -p "$TARGET/var/cache/stew/sources" \
-mkdir -p "$TARGET/root" \
-mkdir -p "$TARGET/home"
+"$TARGET/sbin" \
+"$TARGET/usr/bin" \
+"$TARGET/usr/sbin" \
+"$TARGET/usr/lib" \
+"$TARGET/usr/include" \
+"$TARGET/usr/share" \
+"$TARGET/etc" \
+"$TARGET/dev/pts" \
+"$TARGET/proc" \
+"$TARGET/sys" \
+"$TARGET/tmp" \
+"$TARGET/run" \
+"$TARGET/var/db/stew/installed" \
+"$TARGET/var/cache/stew/sources" \
+"$TARGET/root" \
+"$TARGET/home"
 
 
 # Deploy static BusyBox userspace
@@ -58,8 +58,15 @@ if [ ! -x "$BUSYBOX_BIN" ]; then
 fi
 
 echo "[*] Generating core symlinks from BusyBox..."
-# Install base applet symlinks directly into $TARGET/bin
-"$BUSYBOX_BIN" --install -s "$TARGET/bin"
+(
+	cd "$TARGET/bin"
+	for applet in $("$BUSYBOX_BIN" --list); do
+		ln -sf busybox "$applet"
+	done
+	ln -sf busybox sh
+	ln -sf busybox ash
+)
+
 
 # Explicitly guarentee shell symlinks
 ln -sf busybox "$TARGET/bin/sh"
@@ -69,6 +76,9 @@ ln -sf busybox "$TARGET/bin/ash"
 echo "[*] Staging musl libc and dynamic loader..."
 mkdir -p "$TARGET/usr/lib"
 ln -sf usr/lib "$TARGET/lib"
+ln -sf usr/lib "$TARGET/lib64"
+ln -sf lib "$TARGET/usr/lib64"
+ln -sf /lib/ld-musl-x86_64.so.1 "$TARGET/usr/bin/ldd"
 
 # Copy from host if available
 cp -a /lib/ld-musl-x86_64.so.1 "$TARGET/usr/lib/" 2>/dev/null || true
@@ -76,11 +86,34 @@ cp -a /usr/lib/libc.so "$TARGET/usr/lib/" 2>/dev/null || true
 cp -a /usr/lib/libgcc_s.so* "$TARGET/usr/lib/" 2>/dev/null || true
 cp -a /usr/lib/libstdc++.so* "$TARGET/usr/lib/" 2>/dev/null || true
 
+# Stage bootstrap and build binaries
+echo "[*] Staging host musl GCC, binutils, make, and C headers..."
+mkdir -p "$TARGET/usr/bin" \
+	"$TARGET/usr/include" \
+	"$TARGET/usr/libexec" \
+	"$TARGET/usr/lib/gcc"
+
+# 1. Compiler and build binaries
+for bin in gcc cc g++ cpp as ld ar nm ranlib make; do
+	if [ -f "/usr/bin/$bin" ]; then
+		cp -a "/usr/bin/$bin" "$TARGET/usr/bin/"
+	fi
+done
+
+# 2. GCC internals (cc1, cc1plus, collect2) and specs/libraries
+cp -a /usr/libexec/gcc "$TARGET/usr/libexec/" 2>/dev/null || true
+cp -a /usr/lib/gcc "$TARGET/usr/lib/" 2>/dev/null || true
+cp -a /usr/lib/gcc/*/*/gcc "$TARGET/usr/bin/gcc" 2>/dev/null || true
+ln -sf gcc "$TARGET/usr/bin/cc"
+
+# 3. C standard and kernel headers
+cp -a /usr/include/* "$TARGET/usr/include/" 2>/dev/null || true 
+
+
 
 # Ensure ld-musl symlink points to libc.so if missing
 [ -f "$TARGET/usr/lib/libc.so" ] && [ ! -e "$TARGET/usr/lib/ld-musl-x86_64.so.1" ] && \
 	ln -sf libc.so "$TARGET/usr/lib/ld-musl-x86_64.so.1"
-
 
 
 # 1. Clone or update the repository inside the target root
@@ -131,7 +164,7 @@ EOF
 
 # 5. Copy host DNS resolution
 if [ -f /etc/resolv.conf ]; then
-	cp -L /etc/resolv.conf "$TARGET/etc/resolve.conf" 2>/dev/null || true
+	cp -L /etc/resolv.conf "$TARGET/etc/resolv.conf" 2>/dev/null || true
 fi
 
 # 6. Mount pseudofilesystems
@@ -142,6 +175,51 @@ mount -t proc proc "$TARGET/proc"
 mount -t sysfs sysfs "$TARGET/sys"
 mount -t tmpfs tmpfs "$TARGET/tmp"
 mount -t tmpfs tmpfs "$TARGET/run"
+
+
+# Ensure bootstrap compiler toolchain exists in target
+if [ ! -x "$TARGET/usr/bin/gcc" ]; then
+	echo "[*] Downloading native musl GCC toolchain..."
+	curl -fsSL "https://musl.cc/x86_64-linux-musl-native.tgz" -o /tmp/musl-toolchain.tgz
+	
+	echo "[*] Unpacking toolchain into $TARGET/usr..."
+	tar -xvzf /tmp/musl-toolchain.tgz --strip-components=1 -C "$TARGET/usr"
+
+	# Ensure cc and make symlinks exist
+	[ ! -e "$TARGET/usr/bin/cc" ] && ln -sf gcc "$TARGET/usr/bin/cc"
+	[ ! -e "$TARGET/usr/bin/make" ] && ln -sf /usr/bin/gmake "$TARGET/usr/bin/make" 2>/dev/null || true
+
+	rm -f /tmp/musl-toolchain.tgz
+fi
+
+
+# Bootstrap GNU make if missing from target
+if [ ! -x "$TARGET/usr/bin/make" ]; then
+	echo "[*] Bootstrapping GNU make into target..."
+	chroot "$TARGET" /bin/sh -c '
+		export PATH="/usr/bin:/usr/sbin:/bin:/sbin"
+		cd /tmp
+		MAKE_VER="make-4.4.1"	
+		if [ ! -f "make-4.4.1.tar.gz" ]; then
+			wget -q "http://ftp.gnu.org/gnu/make/${MAKE_VER}.tar.gz"
+		fi
+		rm -rf make-4.4.1
+		tar -xzvf "${MAKE_VER}.tar.gz"
+		cd make-4.4.1
+
+		# Build usign targets compiler and headers
+			./configure \
+				--prefix=/usr \
+				--without-guile \
+				--disable-dependency-tracking
+		sh ./build.sh
+		./make install
+		ln -sf make /usr/bin/gmake
+		cd /tmp && rm -rf make-4.4.1 "${MAKE_VER}.tar.gz"
+	'
+fi
+
+
 
 echo "[+] Entering Broth chroot..."
 chroot "$TARGET" /bin/sh -l
