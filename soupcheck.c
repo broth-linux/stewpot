@@ -44,13 +44,18 @@ static int read_dependencies(const char *pkg, char deps[128][NAME_MAX_LEN], int 
     FILE *f = fopen(dep_path, "r");
     if (!f) return 0;
 
-    char line[256];
+    char line[1024];
     while (fgets(line, sizeof(line), f) && *count < 128) {
-        char dep[NAME_MAX_LEN];
-        /* Skip comments and empty lines exactly like checkout */
-        if (sscanf(line, "%127s", dep) == 1 && dep[0] != '#') {
-            strncpy(deps[(*count)++], dep, NAME_MAX_LEN - 1);
-        }
+    	char *comment = strchr(line, '#');
+    	if (comment) *comment = '\0';
+
+    	char *tok = strtok(line, " \t\r\n");
+    	while (tok && *count < 128) {
+    		if (strlen(tok) > 0) {
+    			strncpy(deps[(*count)++], tok, NAME_MAX_LEN - 1);
+    		}
+    		tok = strtok(NULL, " \t\r\n");
+    	}
     }
     fclose(f);
     return 1;
