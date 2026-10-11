@@ -69,8 +69,10 @@ main_menu() {
 
 	if [ "$DEBUG_MODE" = "on" ]; then
 		ITEMS="$ITEMS 6 \"Autodepends (Scan ELF Dependencies)\""
-		ITEMS="$ITEMS 7 \"Exit the kitchen\""
-		EXIT_KEY="7"
+		ITEMS="$ITEMS 7 \"Prepare a recipe (New Dish)\""
+		ITEMS="$ITEMS 8 \"Edit a recipe (Modify .rsc))\""
+		ITEMS="$ITEMS 9 \"Exit the kitchen\""
+		EXIT_KEY="9"
 	else
 		ITEMS="$ITEMS 6 \"Exit the kitchen\""
 		EXIT_KEY="6"
@@ -80,7 +82,7 @@ main_menu() {
 	TMP="/tmp/chef.$$"
 	eval "dialog --clear \
 		--backtitle \"Broth Linux - Kitchen Management\" \
-		--menu \"Select kitchen task:\" 18 55 8 $ITEMS" 2> "$TMP"
+		--menu \"Select kitchen task:\" 19 55 9 $ITEMS" 2> "$TMP"
 		ACTION=$(cat "$TMP")
 		rm -f "$TMP"
 
@@ -95,6 +97,18 @@ main_menu() {
 			6)
 				if [ "$DEBUG_MODE" = "on" ]; then
 					autodepends_menu
+				fi
+				;;
+			7)
+				if [ "$DEBUG_MODE" = "on" ]; then
+					clear
+					preparec
+				fi
+				;;
+			8)
+				if [ "$DEBUG_MODE" = "on" ]; then
+					clear
+					editrscc
 				fi
 				;;
 		esac

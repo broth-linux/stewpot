@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'h':
 		default:
-			fprintf(stderr, C_BOLD "Usage:" C_RESET " %s [-s] <name> [version] [url] [depends] [upstream_url]\n", argv[0]);
+			fprintf(stderr, C_BOLD "Usage:" C_RESET " %s [-s] <name> [version] [depends] [url] [upstream_url]\n", argv[0]);
 			fprintf(stderr, "  -s: Write recipe content to terminal instead of saving to %s\n", recipes_dir);
 			return (opt == 'h') ? 0 : 1;
 		}
@@ -104,8 +104,8 @@ int main(int argc, char *argv[]) {
 	if (remaining >= 1) {
 		snprintf(name, sizeof(name), "%s", argv[optind]);
 		if (remaining >= 2) snprintf(ver, sizeof(ver), "%s", argv[optind + 1]);
-		if (remaining >= 3) snprintf(raw_url, sizeof(raw_url), "%s", argv[optind + 2]);
-		if (remaining >= 4) snprintf(deps, sizeof(deps), "%s", argv[optind + 3]);
+		if (remaining >= 3) snprintf(deps, sizeof(deps), "%s", argv[optind + 3]);
+		if (remaining >= 4) snprintf(raw_url, sizeof(raw_url), "%s", argv[optind + 2]);
 		if (remaining >= 5) snprintf(upstream, sizeof(upstream), "%s", argv[optind + 4]);
 	} else {
 		/* Interactive stdin mode */
@@ -124,9 +124,13 @@ int main(int argc, char *argv[]) {
 			if (in_ver[0] != '\0') snprintf(ver, sizeof(ver), "%s", in_ver);
 		}
 
-		printf("Source URL: ");
+		printf("Dependencies: ");
 		fflush(stdout);
 		if (fgets(deps, sizeof(deps), stdin)) trim_newline(deps);
+
+		printf("Source URL: ");
+		fflush(stdout);
+		if (fgets(raw_url, sizeof(raw_url), stdin)) trim_newline(raw_url);
 
 		printf("Upstream Git URL: ");
 		fflush(stdout);
@@ -142,7 +146,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	char target[1024];
-	snprintf(target, sizeof(target), "%s\%s.rsc", recipes_dir, name);
+	snprintf(target, sizeof(target), "%s/%s.rsc", recipes_dir, name);
 
 	struct stat st;
 	if (stat(target, &st) == 0) {
