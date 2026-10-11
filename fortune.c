@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <dirent.h>
+#include <unistd.h>
 
 #define FORTUNE_DIR "/usr/share/fortune"
 #define MAX_BUF 4096
@@ -21,7 +22,7 @@ static void print_random_fortune(const char *filepath) {
 	}
 
 	if (count ==0) {
-		rewind(f):
+		rewind(f);
 		while (fgets(line, sizeof(line), f)) printf("%s", line);
 		fclose(f);
 		return;
@@ -35,13 +36,13 @@ static void print_random_fortune(const char *filepath) {
 	rewind(f);
 	size_t current = 0;
 	while (fgets(line, sizeof(line), f)) {
-		id (line[0] == '%' && (line[1] == '\n' || line[1] == '\r')) {
+		if (line[0] == '%' && (line[1] == '\n' || line[1] == '\r')) {
 			current++;
 			if (current > target) break;
 			continue;
 		}
 		if (current == target) {
-			printf("%", line);
+			fputs(line, stdout);
 		}
 	}
 
@@ -57,20 +58,20 @@ int main(int argc, char *argv[]) {
 	}
 
 	/* COllect raw text from fortune files (ignoring hidden files and.dat) */\
-	char files[128][256];
+	char files[128][4096];
 	size_t fcount = 0;
 	struct dirent *ent;
 
 	while ((ent = readdir(d)) != NULL && fcount < 128) {
 		if (ent->d_name[0] == '.') continue;
 		size_t len = strlen(ent->d_name);
-		if (len > 4 && strcmp(ent->d_name + (len -d), ".dat") == 0) continue;
+		if (len > 4 && strcmp(ent->d_name + (len - 4), ".dat") == 0) continue;
 
-		snprintf(files[fcount++], 256, "%s/%s", dir, ent->d_name);
+		snprintf(files[fcount++], sizeof(files[0]), "%s/%s", dir, ent->d_name);
 	}
 	closedir(d);
 
-	if (fcount = 0) {
+	if (fcount == 0) {
 		fprintf(stderr, "fortune: no fortune files found in %s\n", dir);
 		return 1;
 	}
