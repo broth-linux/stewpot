@@ -1,0 +1,9 @@
+expat.h libexpat https://github.com/libexpat/libexpat
+ffi.h libffi https://github.com/libffi/libffi
+pcre2.h pcre2 https://github.com/PCRE2Project/pcre2
+openssl/ssl.h openssl https://www.openssl.org/source/
+dbus/dbus.h dbus https://dbus.freedesktop.org/releases/dbus/
+glib.h glib https://gitlab.gnome.org/GNOME/glib
+ncurses.h ncurses https://invisible-island.net/ncurses
+SDL.h libsdl2 https://github.com/libsdl-ORG/SDL
+sigc++/sigc++.h libsigc++ https://github.com/libsigc++/libsigc++.git
