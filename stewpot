@@ -36,11 +36,40 @@ download_file() {
     fi
 }
 
+# Read saved choice from chef, fallback to .flavor default, fallback to passed default
+flavor_get() {
+	local opt="$1"
+	local fallback="${2:-off}"
+	local saved="/etc/broth/flavors/${NAME}"
+	local def="${RECIPES_DIR}/${NAME}.flavor"
+
+	# 1. Check user choice from chef
+	if [ -f "$saved" ]; then
+		local val=$(awk -F= -v k="$opt" '$1 == k {print $2}' "$saved" | tr -d '[:space:]')
+		if [ -n "$val" ]; then
+			echo "$val"
+			return 0
+		fi
+	fi
+
+	# 2. Check recipe default
+	if [ -f "$def" ]; then
+		local val=$(awk -F'[=:]' -v k="$opt" '$1 == k {print $2}' "$def" | tr -d '[:space:]')
+		if [ -n "$val"  ]; then
+			echo "$val"
+			return 0
+		fi
+	fi
+
+	echo "$fallback"
+}
+
+
 
 meson_flavor() {
 	local opt="$1"
-	local flag="${2:-$(echo "$opt" | tr '[:upper:]' '[:lower:]')}"
-	eval "val=\$$opt"
+	local flag="${2:-$opt}"
+	local val=$(flavor_get "$opt" "off")	
 	if [ "$val" = "on" ]; then
 		echo "-D${flag}=enabled"
 	else
@@ -48,10 +77,23 @@ meson_flavor() {
 	fi
 }
 
+# For meson options type : 'boolean'
+meson_bool() {
+	local opt="$1"
+	local flag="${2:-$opt}"
+	local val=$(flavor_get "$opt" "off")	
+		
+	if [ "$val" = "on" ]; then
+			echo "-D${flag}=true"
+		else
+			echo "-D${flag}=false"
+		fi
+}
+
 make_flavor () {
 	local opt="$1"
 	local var="${2:-$opt}"
-	eval "val=\$$opt"
+	local val=$(flavor_get "$opt" "off")	
 	if [ "$val" = "on" ]; then
 		echo "${var}=1"
 	else
@@ -61,9 +103,9 @@ make_flavor () {
 
 conf_flavor() {
 	local opt="$1"
-	local flag="${2:-$(echo "$opt" | tr '[:upper:]' '[:lower:]')}"
+	local flag="${2:-$opt}"
 	local prefix="${3:-enable}"
-	eval "val=\$$opt"
+	local val=$(flavor_get "$opt" "off")	
 	if [ "$val" = "on" ]; then
 		echo "--${prefix}-${flag}"
 	else
@@ -77,7 +119,8 @@ conf_flavor() {
 cmake_flavor() {
 	local opt="$1"
 	local flag="${2:-$opt}"
-	eval "val=\$$opt"
+	local val=$(flavor_get "$opt" "off")	
+	
 	if [ "$val" = "on" ]; then
 		echo "-D${flag}=ON"
 	else
@@ -263,23 +306,6 @@ cook_ingredient() {
     (
         cd "$SRC_DIR"
         set -e
-        # Load defaults from recipe flavor definition
-        local FLAVOR_DEF="${RECIPES_DIR}/${NAME}.flavor"
-        if [ -f "$FLAVOR_DEF" ]; then
-        	while IFS='=:' read -r opt default desc; do
-        		[ -z "$opt" ] && continue
-        		eval "export $opt=\"$default\""
-        	done < "$FLAVOR_DEF"
-        fi
-
-        # Override with user choices saved from chef
-        local SAVED_FLAVOR="/etc/broth/flavors/$NAME"
-        if [ -f "$SAVED_FLAVOR" ]; then
-        	while IFS='=' read -r opt state; do
-        		[ -z "$opt" ] && continue
-        		eval "export $opt=\"$state\""
-        	done < "$SAVED_FLAVOR"
-        fi
         build
     )
     BUILD_STATUS=$?
@@ -389,3 +415,40 @@ case "$COMMAND" in
         exit 1
         ;;
 esac
+
+
+
+
+
+
+
+
+##        # Load defaults from recipe flavor definition
+##        local FLAVOR_DEF="${RECIPES_DIR}/${NAME}.flavor"
+##        if [ -f "$FLAVOR_DEF" ]; then
+##        	while IFS='=:' read -r opt default desc; do
+##        		[ -z "$opt" ] && continue
+##        		clean_opt=$(_sh_var "$opt")
+##        		eval "export $opt=\"$default\""
+##        	done < "$FLAVOR_DEF"
+##        fi
+##
+##        # Override with user choices saved from chef
+##        local SAVED_FLAVOR="/etc/broth/flavors/$NAME"
+##        if [ -f "$SAVED_FLAVOR" ]; then
+##        	while IFS='=' read -r opt state; do
+##        		[ -z "$opt" ] && continue
+##        		clean_opt=$(_sh_var "$opt")
+##        		eval "export $opt=\"$state\""
+##        	done < "$SAVED_FLAVOR"
+##        fi
+
+
+
+
+
+
+
+
+
+
