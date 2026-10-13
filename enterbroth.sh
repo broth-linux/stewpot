@@ -130,7 +130,7 @@ fi
 
 # 2. Deploy scripts and binaries directly to /usr/bin
 echo "[*] Staging Broth tools to /usr/bin..."
-TOOLS="stewpot chef diswash inspector tastetest autodepends checkout pantry prepare editrsc pantry tastetest preaprec editrscc resolveheaders seasonings spill stewpot-checksum"
+TOOLS="stewpot chef dishwash inspector tastetest autodepends checkout pantry prepare editrsc pantry tastetest preparec editrscc resolveheaders seasonings spill stewpot-checksum"
 
 for tool in $TOOLS; do
 	found=""
@@ -161,6 +161,25 @@ export HOME="/root"
 export TERM="${TERM:-xterm-256color}"
 export PS1="broth-chroot [\w]# "
 EOF
+
+# Generate minimal passwd and group
+if [ ! -f "$TARGET/etc/passwd" ]; then
+	echo "[*] Creating standard /etc/passwd and /etc/group..."
+	cat << 'EOF ' > "$TARGET/etc/passwd"
+root:x:0:0:root:/root:/bin/sh
+nobody:x:65534:65534:nobody:/nonexistent:/bin/false
+EOF
+
+	cat << 'EOF' > "$TARGET/etc/group"
+root:x:0:
+wheel:x:10:root
+nobody:x:65534:
+EOF
+
+
+
+
+
 
 # 5. Copy host DNS resolution
 if [ -f /etc/resolv.conf ]; then
@@ -218,6 +237,31 @@ if [ ! -x "$TARGET/usr/bin/make" ]; then
 		cd /tmp && rm -rf make-4.4.1 "${MAKE_VER}.tar.gz"
 	'
 fi
+
+# Run base symlinks and auto-installs inside chroot before dropping to shell
+echo "[*] Running bootstrap cooking and symlinks..."
+chroot "$TARGET" /bin/sh -c '
+	export PATH="/usr/bin:/usr/sbin:/bin:/sbin"
+	export HOME="/root"
+
+	# 1. Symlinks
+	[ ! -e /bin/bash ] && ln -sf /usr/bin/bash /bin/bash 2>/dev/null || true
+	[ ! -e /usr/bin/env ] && ln -sf /bin/busybox /usr/bin/env 2>/dev/null || true
+	[ ! -e /usr/bin/busybox ] && ln -sf /bin/busybox /usr/bin/busybox 2>/dev/null || true
+
+	# 2. Sequential package builds
+	for pkg in sudo zlib perl openssl curl ncurses fzy dialog; do
+		if [ ! -d "/var/db/stew/installed/$pkg" ]; then
+			echo "[*] Auto-building $pkg..."
+			stewpot cook "$pkg"
+			stewpot install "pkg"
+		fi
+	done
+'
+
+
+
+
 
 
 
