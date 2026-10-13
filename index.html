@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width-device-width, initial-scale=1">
+	<title>Broth Linux</title>
+	<style>
+		body {
+			max-width: 760px;
+			margin: 2rem auto;
+			padding: 0 1rem;
+			font-family: monospace;
+			line-height: 1.5;
+			background: #111;
+			color: #eee;
+		}
+		a { color: #5af; }
+		pre, code { background: #222; padding: 0.2rem 0.4rem; border-radius: 3px; }
+		pre code { display: block; padding: 1rem; overflow-x: auto; }
+		hr { border: 0; border-top: 1px solid #444; margin: 1.5rem 0; }
+	</style>
+</head>
+<body>
+<h1>Broth Linux</h1>
+
+<p>A <strong>source based</strong>, <strong>musl/busybox</strong> - <strong>POSIX complient</strong> operating system with a custom
+package manager <code>stewpot</code>.</p>
+
+<hr />
+
+<h2>About</h2>
+
+<p>Built out of spite from the difficulties of using <em>SMGL</em> in the modern era and from the love of <em>KISS linux</em>,
+Broth aims to do what sourcemage couldn&rsquo;t. No bash scripts, no glibc, no broken dependency resolution or any
+extra/unnessecary lines of code making the whole toolchain destroy itself nearly every time you try and bootstrap it.
+With a dedicated <code>chef</code> menu built to be a clone of <code>sorcery</code>, as well as having access to command line tools still
+gives the promise of simplicity <em>&ndash;</em> yet still give the user complete control of the system with plain/easy to read <code>sh</code> scripts.</p>
+
+<hr />
+
+<h3>Core Features</h3>
+
+<ul>
+<li>Musl libc based</li>
+<li>Busybox userland</li>
+<li>Zero systemd bloat</li>
+<li>Custom POSIX shell package management</li>
+</ul>
+
+
+<hr />
+
+<ol>
+<li>Step one: curl ./enterbroth.sh</li>
+<li>Step two: run ./enterbroth.sh /mnt/broth-root</li>
+<li>Step three: Cook recipe source configs.</li>
+</ol>
+
+
+<p><a href="https://github.com/broth-linux">Broth Linux Github</a></p>
+
+<hr />
+
+<h3>Broth Linux Commands</h3>
+
+<p>```
+spill, stewpot, soupcheck, preparec, editrscc, chef, pantry,
+dishwash, inspector, resolveheaders, autodepends, tastetest</p>
+
+<h2>```</h2>
+</body>
+</html>
