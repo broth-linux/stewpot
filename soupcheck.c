@@ -124,7 +124,7 @@ static void render_tree(const char *pkg, const char *prefix, int is_tail) {
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: stew-graph <installed-pkg>\n");
+        fprintf(stderr, "Usage: soupcheck <installed-pkg>\n");
         return 1;
     }
 
