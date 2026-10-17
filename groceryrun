@@ -1,0 +1,36 @@
+#!/bin/sh
+set -e
+
+COOKBOOK="/var/db/stew/cookbook"
+STAMP="/var/db/stew/./last_update"
+
+# 1. Sanity check directory
+if [ ! -d "$COOKBOOK/.git" ]; then
+	printf "Error: %s is not a git repository.\n" "$COOKBOOK" >&2
+	exit 1
+fi
+
+cd "$COOKBOOK"
+
+# 2. Grab current commite before pulling
+OLD_HEAD=$(git rev-parse HEAD)
+
+printf "==> Fetching latest recipes...\n"
+git pull --f-only
+
+NEW_HEAD=$(git rev-parse HEAD)
+
+# 3. Check if anything changed
+if [ "$OLD_HEAD" = "$NEW_HEAD" ]; then
+	printf "==> Cookbook is already up to date.\n"
+else
+	printf "\n==> Updated recipes :\n"
+	# Show only modified/added .rsc recipce files
+	git diff --name-status "$OLD_HEAD" "$NEW_HEAD" | grep '\.rsc' || true
+fi
+
+# 4. Stamp update state with timestamp and commit hash
+date +%s > "$STAMP"
+printf "%s\n" "$NEW_HEAD" >> "$STAMP"
+
+printf "==> Update copmplete. Ready for broth-upgrade.\n"
