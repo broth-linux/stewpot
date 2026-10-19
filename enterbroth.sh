@@ -4,6 +4,23 @@ set -e
 TARGET="${1:-./broth-root}"
 REPO_URL="https://github.com/broth-linux/stewpot.git"
 
+ARCH="$(uname -m)"
+	case "$ARCH" in
+		aarch64|arm64)
+			MUSL_TRIPLET="aarch64-linux-musl"
+			MUSL_LD="ld-musl-aarch64.so.1"
+			;;
+		x86_64)
+			MUSL_TRIPLET="x86_64-linux-musl"
+			MUSL_LD="ld-musl-x86_64.so.1"
+			;;
+		*)
+			echo "[-] Currently unsupported architecture: $ARCH" >&2
+			exit 1
+			;;
+	esac
+
+
 if [ "$(id -u)" -ne 0 ]; then
 	echo "[-] Error: Root privileges required for directory setup and bind mounts." >&2
 	exit 1
@@ -42,7 +59,7 @@ mkdir -p "$TARGET/bin" \
 
 # Deploy static BusyBox userspace
 BUSYBOX_BIN="$TARGET/bin/busybox"
-BUSYBOX_URL="https://busybox.net/downloads/binaries/1.35.0-x86_64-linux-musl/busybox"
+BUSYBOX_URL="https://busybox.net/downloads/binaries/1.35.0-${MUSL_TRIPLET}/busybox"
 
 if [ ! -x "$BUSYBOX_BIN" ]; then
 	echo "[*] Fetching static BusyBox binary..."
@@ -78,13 +95,18 @@ mkdir -p "$TARGET/usr/lib"
 ln -sf usr/lib "$TARGET/lib"
 ln -sf usr/lib "$TARGET/lib64"
 ln -sf lib "$TARGET/usr/lib64"
-ln -sf /lib/ld-musl-x86_64.so.1 "$TARGET/usr/bin/ldd"
+ln -sf "/lib/$MUSL_LD" "$TARGET/usr/bin/ldd"
 
 # Copy from host if available
-cp -a /lib/ld-musl-x86_64.so.1 "$TARGET/usr/lib/" 2>/dev/null || true
+cp -a "/lib/$MUSL_LD" "$TARGET/usr/lib/" 2>/dev/null || true
 cp -a /usr/lib/libc.so "$TARGET/usr/lib/" 2>/dev/null || true
 cp -a /usr/lib/libgcc_s.so* "$TARGET/usr/lib/" 2>/dev/null || true
 cp -a /usr/lib/libstdc++.so* "$TARGET/usr/lib/" 2>/dev/null || true
+
+# Fallback: symlink ld-musl to libc.so if needed
+[ -f "TARGET/usr/lib/libc.so" ] && [ ! -e "$TARGET/usr/lib/$MUSL_LD" ] && \
+	ln -sf libc.so "$TARGET/usr/lib/$MUSL_LD"
+
 
 # Stage bootstrap and build binaries
 echo "[*] Staging host musl GCC, binutils, make, and C headers..."
@@ -112,8 +134,8 @@ cp -a /usr/include/* "$TARGET/usr/include/" 2>/dev/null || true
 
 
 # Ensure ld-musl symlink points to libc.so if missing
-[ -f "$TARGET/usr/lib/libc.so" ] && [ ! -e "$TARGET/usr/lib/ld-musl-x86_64.so.1" ] && \
-	ln -sf libc.so "$TARGET/usr/lib/ld-musl-x86_64.so.1"
+[ -f "$TARGET/usr/lib/libc.so" ] && [ ! -e "$TARGET/usr/lib/ld-musl-$MUSL_LD.so.1" ] && \
+	ln -sf libc.so "$TARGET/usr/lib/ld-musl-$MUSL_LD.so.1"
 
 
 # 1. Clone or update the repository inside the target root
@@ -153,6 +175,10 @@ if [ -d "$SRC_DIR/recipes" ]; then
 	cp -rf "$SRC_DIR/recipes/"* "$TARGET/usr/bin/recipes/" 2>/dev/null || true
 fi
 
+
+
+
+
 # 4. Standard POSIX environment and PATH setup
 cat << 'EOF' > "$TARGET/etc/profile"
 export PATH="/usr/bin:/usr/sbin:/bin:/sbin"
@@ -165,7 +191,7 @@ EOF
 # Generate minimal passwd and group
 if [ ! -f "$TARGET/etc/passwd" ]; then
 	echo "[*] Creating standard /etc/passwd and /etc/group..."
-	cat << 'EOF ' > "$TARGET/etc/passwd"
+	cat << 'EOF' > "$TARGET/etc/passwd"
 root:x:0:0:root:/root:/bin/sh
 nobody:x:65534:65534:nobody:/nonexistent:/bin/false
 EOF
@@ -175,7 +201,7 @@ root:x:0:
 wheel:x:10:root
 nobody:x:65534:
 EOF
-
+fi
 
 
 
@@ -195,11 +221,23 @@ mount -t sysfs sysfs "$TARGET/sys"
 mount -t tmpfs tmpfs "$TARGET/tmp"
 mount -t tmpfs tmpfs "$TARGET/run"
 
+# Seed OpenSSL source into target workspace
+OPENSSL_VER="3.3.2"
+OPENSSL_TAR="openssl-${OPENSSL_VER}.tar.gz"
+OPENSSL_URL="https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VER}/${OPENSSL_VER}"
+WORKSPACE_SRC="$TARGET/tmp/stewpot/workspace/src"
+
+echo "[*] Pre-Seeding $OPENSSL_TAR into stewpot workspace..."
+mkdir -p "$WORKSPACE_SRC"
+if [ ! -f "$WORKSPACE_SRC/$OPENSSL_TAR" ]; then
+	curl -fl -o "$WORKSPACE_SRC/$OPENSSL_TAR" "$OPENSSL_URL"
+fi
+
 
 # Ensure bootstrap compiler toolchain exists in target
 if [ ! -x "$TARGET/usr/bin/gcc" ]; then
-	echo "[*] Downloading native musl GCC toolchain..."
-	curl -fsSL "https://musl.cc/x86_64-linux-musl-native.tgz" -o /tmp/musl-toolchain.tgz
+	echo "[*] Downloading native musl GCC toolchain for $MUSL_TRIPLET..."
+	curl -fsSL "https://musl.cc/${MUSL_TRIPLET}-native.tgz" -o /tmp/musl-toolchain.tgz
 	
 	echo "[*] Unpacking toolchain into $TARGET/usr..."
 	tar -xvzf /tmp/musl-toolchain.tgz --strip-components=1 -C "$TARGET/usr"
@@ -254,7 +292,7 @@ chroot "$TARGET" /bin/sh -c '
 		if [ ! -d "/var/db/stew/installed/$pkg" ]; then
 			echo "[*] Auto-building $pkg..."
 			stewpot cook "$pkg"
-			stewpot install "pkg"
+			stewpot install "$pkg"
 		fi
 	done
 '
