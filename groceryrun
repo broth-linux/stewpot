@@ -16,7 +16,7 @@ cd "$COOKBOOK"
 OLD_HEAD=$(git rev-parse HEAD)
 
 printf "==> Fetching latest recipes...\n"
-git pull --f-only
+git pull --ff-only
 
 NEW_HEAD=$(git rev-parse HEAD)
 
