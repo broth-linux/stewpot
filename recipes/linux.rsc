@@ -5,7 +5,7 @@ URL="https://mirrors.edge.kernel.org/pub/linux/kernel/v7.x/linux-7.1.9.tar.xz"
 
 build() {
     # Generate default base configuration
-    make defconfig
+    make localmodconfig
 
 # Strip out every subsystem that invokes objtool
 ./scripts/config --disable CONFIG_UNWINDER_ORC \
@@ -26,6 +26,17 @@ build() {
 ./scripts/config --enable CONFIG_DEVTMPFS \
     --enable CONFIG_DEVTMPFS_MOUNT \
     --enable CONFIG_EFI_STUB \
+    --enable CONFIG_NETDEVICES \
+    --enable CONFIG_ETHERNET \
+    --enable CONFIG_NET_VENDOR_INTEL \
+    --enable CONFIG_E1000E \
+    --enable CONFIG_SOUND \
+    --enable CONFIG_SND \
+    --enable CONFIG_SND_USB \
+    --enable CONFIG_SND_USB_AUDIO \
+    --enable CONFIG_SND_HDA_INTEL \
+    --enable CONFIG_SND_HDA_CODEC_REALTEK \
+    --disable CONFIG_SND_HDA_CODEC_CA0132 \
     --enable CONFIG_VT \
     --enable CONFIG_VT_CONSOLE \
     --enable CONFIG_HW_CONSOLE \
@@ -58,7 +69,7 @@ EOF
     make -j$(nproc) bzImage modules STACK_VALIDATION=
 
     # Install modules and artifacts
-    make modules_install
+    make modules_install INSTALL_MOD_STRIP=1
     mkdir -p /boot
     cp -v arch/x86/boot/bzImage /boot/vmlinuz-${VERSION}
     cp -v System.map /boot/System.map-${VERSION}

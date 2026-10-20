@@ -9,9 +9,14 @@ build() {
         -Dvendorprefix=/usr \
         -Dusethreads \
         -Duseshrplib \
-        -Dman1dir='' \
-        -Dman3dir=''
+        -Dman1dir=/tmp/perl-man \
+        -Dman3dir=/tmp/perl-man \
+        -Dman1ext=1 \
+        -Dman3ext=3
         
     make -j$(nproc)
     make DESTDIR="$BUILD_ROOT" install
+
 }
+
+rm -rf /tmp/perl-man

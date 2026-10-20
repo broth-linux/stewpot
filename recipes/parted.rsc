@@ -3,7 +3,7 @@ NAME="parted"
 VERSION="3.6"
 DEPENDS=""
 URL="https://ftp.gnu.org/gnu/parted/parted-3.6.tar.xz"
-UPSTREAM_SOURCE="https://git.savannah.gnu.org/git/parted.git"
+UPSTREAM_SOURCE="https://git.savannah.gnu.org/gnu/parted.git"
 
 build() {
 

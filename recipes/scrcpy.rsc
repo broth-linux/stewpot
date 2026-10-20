@@ -1,18 +1,20 @@
 # Recipe for scrcpy
 NAME="scrcpy"
-VERSION="5.0"
+VERSION="2.7"
 DEPENDS="ffmpeg sdl2 libusb openssl zlib"
-URL="https://github.com/Genymobile/scrcpy/archive/refs/tags/v5.0.tar.gz"
+URL="https://github.com/Genymobile/scrcpy/archive/refs/tags/v${VERSION}.tar.gz"
 UPSTREAM_SOURCE="https://github.com/Genymobile/scrcpy.git"
 
 build() {
-    ./configure \
-        --prefix=/usr \
-        --sysconfdir=/etc \
-        --mandir=/usr/share/man \
-        --localstatedir=/var
 
-    make -j$(nproc 2>/dev/null || echo 1)
-    make DESTDIR="$BUILD_ROOT" install
+	meson setup build \
+		--prefix=/usr \
+		--buildtype=release \
+		-Dcompile_server=false \
+		-Dprebuilt_server=../scrcpy-server
+
+	ninja -C build -j$(nproc)
+	DESTDIR="$BUILD_ROOT" ninja -C build install
+
 }
 

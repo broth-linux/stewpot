@@ -1,8 +1,8 @@
 # Recipe for alsa-lib
 NAME="alsa-lib"
-VERSION="1.2.5.1"
+VERSION="1.2.13"
 DEPENDS=""
-URL="https://ww.alsa-project.org/files/pub/lib/alsa-lib-1.2.5.1.tar.bz2"
+URL="https://ww.alsa-project.org/files/pub/lib/alsa-lib-1.2.13.tar.bz2"
 UPSTREAM_SOURCE=""
 
 build() {
