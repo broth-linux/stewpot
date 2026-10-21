@@ -1,8 +1,8 @@
 # Recipe for cmake
 NAME="cmake"
-VERSION="4.4.2"
+VERSION="4.4.4"
 DEPENDS=""
-URL="https://github.com/Kitware/CMake/archive/refs/tags/v4.4.2.tar.gz"
+URL="https://github.com/Kitware/CMake/archive/refs/tags/v$VERSION.tar.gz"
 
 build() {
     ./bootstrap \

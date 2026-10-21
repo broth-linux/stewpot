@@ -1,11 +1,17 @@
 # Recipe for gcc
 NAME="gcc"
-VERSION="16.2.0"
-DEPENDS="gawk perl"
+VERSION="14.2.0"
+DEPENDS="gawk"
 URL="https://ftp.gnu.org/gnu/gcc/gcc-${VERSION}/gcc-${VERSION}.tar.xz"
 UPSTREAM_SOURCE=""
 
 build() {
+# 1. Force bash and GNU Awk in th env
+	export SHELL="/bin/bash"
+	export CONFIG_SHELL="/bin/sh"
+	export AWK="/usr/bin/gawk"
+
+# 2. Setup seperate out-of-tree build dirs inside the workspace
 
 	export LC_ALL=C
 	export LANG=C
