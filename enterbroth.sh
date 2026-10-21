@@ -184,7 +184,7 @@ cat << 'EOF' > "$TARGET/etc/profile"
 export PATH="/usr/bin:/usr/sbin:/bin:/sbin"
 export RECIPES="/usr/bin/recipes"
 export HOME="/root"
-export TERM="${TERM:-xterm-256color}"
+export TERM="linux"
 export PS1="broth-chroot [\w]# "
 EOF
 
@@ -209,7 +209,10 @@ fi
 
 # 5. Copy host DNS resolution
 if [ -f /etc/resolv.conf ]; then
-	cp -L /etc/resolv.conf "$TARGET/etc/resolv.conf" 2>/dev/null || true
+	cat << 'EOF' > "$TARGET/etc/resolv.conf"
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+EOF
 fi
 
 # 6. Mount pseudofilesystems
@@ -225,12 +228,12 @@ mount -t tmpfs tmpfs "$TARGET/run"
 OPENSSL_VER="3.3.2"
 OPENSSL_TAR="openssl-${OPENSSL_VER}.tar.gz"
 OPENSSL_URL="https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VER}/${OPENSSL_VER}"
-WORKSPACE_SRC="$TARGET/tmp/stewpot/workspace/src"
+WORKSPACE_SRC="$TARGET/tmp/stew-pot-workspace"
 
 echo "[*] Pre-Seeding $OPENSSL_TAR into stewpot workspace..."
 mkdir -p "$WORKSPACE_SRC"
 if [ ! -f "$WORKSPACE_SRC/$OPENSSL_TAR" ]; then
-	curl -fl -o "$WORKSPACE_SRC/$OPENSSL_TAR" "$OPENSSL_URL"
+	curl -fL "$OPENSSL_URL" -o "$WORKSPACE_SRC/OPENSSL_TAR"
 fi
 
 
@@ -291,8 +294,7 @@ chroot "$TARGET" /bin/sh -c '
 	for pkg in sudo zlib perl openssl curl ncurses fzy dialog; do
 		if [ ! -d "/var/db/stew/installed/$pkg" ]; then
 			echo "[*] Auto-building $pkg..."
-			stewpot cook "$pkg"
-			stewpot install "$pkg"
+			stewpot cook "$pkg" && stewpot install "$pkg"
 		fi
 	done
 '
