@@ -225,9 +225,9 @@ mount -t tmpfs tmpfs "$TARGET/tmp"
 mount -t tmpfs tmpfs "$TARGET/run"
 
 # Seed OpenSSL source into target workspace
-OPENSSL_VER="3.3.2"
+OPENSSL_VER="3.4.7"
 OPENSSL_TAR="openssl-${OPENSSL_VER}.tar.gz"
-OPENSSL_URL="https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VER}/${OPENSSL_VER}"
+OPENSSL_URL="https://github.com/openssl/openssl/archive/refs/tags/openssl-${OPENSSL_VER}.tar.gz"
 WORKSPACE_SRC="$TARGET/tmp/stew-pot-workspace"
 
 echo "[*] Pre-Seeding $OPENSSL_TAR into stewpot workspace..."
